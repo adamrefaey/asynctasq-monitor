@@ -1,5 +1,5 @@
 [project]
-name = "async-task-monitor"
+name = "q-task-monitor"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
