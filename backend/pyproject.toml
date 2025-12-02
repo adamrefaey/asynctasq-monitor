@@ -39,7 +39,7 @@ dev = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = [
@@ -66,8 +66,16 @@ max-returns = 6
 max-statements = 50
 
 [tool.pyright]
-pythonVersion = "3.11"
+pythonVersion = "3.14"
 typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
+
+[tool.pydantic-mypy]
+# Enable pydantic plugin features for type checkers
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
 
 [tool.pytest.ini_options]
 # Use strict mode to avoid false positives from auto-detection
