@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from async_task_q.core.models import TaskInfo
 
@@ -57,10 +57,8 @@ class Task(BaseModel):
     timeout_seconds: int | None = Field(None, description="Execution timeout")
     tags: list[str] = Field(default_factory=list, description="Custom tags for filtering")
 
-    class Config:
-        """Pydantic configuration for examples."""
-
-        json_schema_extra: ClassVar[dict] = {
+    model_config: ClassVar[ConfigDict] = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "550e8400-e29b-41d4-a716-446655440000",
                 "name": "send_email",
@@ -81,6 +79,7 @@ class Task(BaseModel):
                 "tags": ["transactional"],
             },
         }
+    )
 
     @classmethod
     def from_task_info(cls, task_info: TaskInfo) -> "Task":

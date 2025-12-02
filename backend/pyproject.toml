@@ -108,6 +108,8 @@ filterwarnings = [
     "ignore:coroutine.*was never awaited:RuntimeWarning:tracemalloc",
     "ignore:coroutine.*was never awaited:RuntimeWarning:re",
     "ignore:coroutine.*was never awaited:RuntimeWarning:argparse",
+    # Suppress Pytest assert rewrite warning when modules are imported early
+    "ignore:Module already imported so cannot be rewritten:pytest.PytestAssertRewriteWarning",
 ]
 
 [tool.coverage.run]

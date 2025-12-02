@@ -26,7 +26,7 @@ async def list_tasks(
     search: Annotated[str | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=500)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
-    task_service: Annotated[TaskService, Depends(get_task_service)] = _get_task_service_dep,
+    task_service: TaskService = _get_task_service_dep,
 ) -> TaskListResponse:
     """List tasks with optional filtering and pagination."""
     filters = TaskFilters(status=status, queue=queue, worker_id=None, search=search)
@@ -37,7 +37,7 @@ async def list_tasks(
 @router.get("/tasks/{task_id}")
 async def get_task(
     task_id: str,
-    task_service: Annotated[TaskService, Depends(get_task_service)] = _get_task_service_dep,
+    task_service: TaskService = _get_task_service_dep,
 ) -> Task:
     """Retrieve a single task by id, or raise HTTP 404 if not found."""
     task = await task_service.get_task_by_id(task_id)
@@ -49,7 +49,7 @@ async def get_task(
 @router.post("/tasks/{task_id}/retry")
 async def retry_task(
     task_id: str,
-    task_service: Annotated[TaskService, Depends(get_task_service)] = _get_task_service_dep,
+    task_service: TaskService = _get_task_service_dep,
 ) -> dict:
     """Retry a failed task by re-enqueueing it via the driver."""
     success = await task_service.retry_task(task_id)
@@ -61,7 +61,7 @@ async def retry_task(
 @router.delete("/tasks/{task_id}")
 async def delete_task(
     task_id: str,
-    task_service: Annotated[TaskService, Depends(get_task_service)] = _get_task_service_dep,
+    task_service: TaskService = _get_task_service_dep,
 ) -> dict:
     """Delete a task by id."""
     success = await task_service.delete_task(task_id)
