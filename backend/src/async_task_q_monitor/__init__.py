@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from fastapi import FastAPI  # pragma: no cover - typing only
 
 
-def create_monitoring_app(*args: object, **kwargs: object) -> "FastAPI":
+def create_monitoring_app(*args: object, **kwargs: object) -> FastAPI:
     """Lazily import and call `create_monitoring_app` from `api.main`.
 
     Returns a `FastAPI` application instance. Arguments are forwarded to

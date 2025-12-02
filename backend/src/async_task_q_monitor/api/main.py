@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Manage startup and shutdown events for the monitoring app."""
     logger.info("Starting async-task-q-monitor...")
 

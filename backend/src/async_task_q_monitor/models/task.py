@@ -82,7 +82,7 @@ class Task(BaseModel):
     )
 
     @classmethod
-    def from_task_info(cls, task_info: TaskInfo) -> "Task":
+    def from_task_info(cls, task_info: TaskInfo) -> Task:
         """Convert core TaskInfo dataclass to rich Pydantic Task model."""
         return cls(
             id=task_info.id,
