@@ -15,12 +15,26 @@ from uuid import uuid4
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 import pytest
+import pytest_asyncio
 from starlette.testclient import TestClient
 
-from async_task_q_monitor.api.dependencies import get_task_service
+from async_task_q_monitor.api.dependencies import get_task_service, get_worker_service
 from async_task_q_monitor.api.main import create_monitoring_app
 from async_task_q_monitor.config import Settings, get_settings
 from async_task_q_monitor.models.task import Task, TaskFilters, TaskStatus
+from async_task_q_monitor.models.worker import (
+    HeartbeatRequest,
+    HeartbeatResponse,
+    Worker,
+    WorkerAction,
+    WorkerActionResponse,
+    WorkerDetail,
+    WorkerFilters,
+    WorkerListResponse,
+    WorkerLog,
+    WorkerLogsResponse,
+    WorkerStatus,
+)
 
 # ============================================================================
 # Mock Service
@@ -90,6 +104,234 @@ class MockTaskService:
     def clear(self) -> None:
         """Clear all tasks (for test cleanup)."""
         self._tasks.clear()
+
+
+class MockWorkerService:
+    """Mock WorkerService for testing without actual queue backend."""
+
+    def __init__(self, *, workers: list[Worker] | None = None) -> None:
+        """Initialize with optional list of workers."""
+        self._workers: dict[str, Worker] = {}
+        self._logs: dict[str, list[WorkerLog]] = {}
+        self._pending_actions: dict[str, dict[str, bool]] = {}
+        if workers:
+            for w in workers:
+                self._workers[w.id] = w
+                self._logs[w.id] = []
+                self._pending_actions[w.id] = {"pause": False, "shutdown": False}
+
+    async def get_workers(
+        self,
+        filters: WorkerFilters | None = None,
+    ) -> WorkerListResponse:
+        """Return filtered workers as WorkerListResponse."""
+
+        items = list(self._workers.values())
+
+        if filters:
+            if filters.status is not None:
+                items = [w for w in items if w.status == filters.status]
+            if filters.queue is not None:
+                items = [w for w in items if filters.queue in w.queues]
+            if filters.search is not None:
+                search_lower = filters.search.lower()
+                items = [
+                    w
+                    for w in items
+                    if search_lower in w.name.lower()
+                    or search_lower in w.id.lower()
+                    or (w.hostname and search_lower in w.hostname.lower())
+                ]
+            if filters.is_paused is not None:
+                items = [w for w in items if w.is_paused == filters.is_paused]
+            if filters.has_current_task is not None:
+                if filters.has_current_task:
+                    items = [w for w in items if w.current_task_id is not None]
+                else:
+                    items = [w for w in items if w.current_task_id is None]
+
+        return WorkerListResponse(items=items, total=len(items))
+
+    async def get_worker_by_id(self, worker_id: str) -> Worker | None:
+        """Return a worker by ID or None if not found."""
+        return self._workers.get(worker_id)
+
+    async def get_worker_detail(self, worker_id: str) -> WorkerDetail | None:
+        """Return detailed worker info or None if not found."""
+
+        worker = self._workers.get(worker_id)
+        if worker is None:
+            return None
+        return WorkerDetail(**worker.model_dump(), recent_tasks=[], hourly_throughput=[])
+
+    async def perform_action(
+        self,
+        worker_id: str,
+        action: WorkerAction,
+        *,
+        force: bool = False,
+    ) -> WorkerActionResponse:
+        """Perform a management action on a worker."""
+        worker = self._workers.get(worker_id)
+        if not worker:
+            return WorkerActionResponse(
+                success=False,
+                worker_id=worker_id,
+                action=action,
+                message=f"Worker {worker_id} not found",
+            )
+
+        if action == WorkerAction.PAUSE:
+            if worker.status == WorkerStatus.OFFLINE:
+                return WorkerActionResponse(
+                    success=False,
+                    worker_id=worker_id,
+                    action=action,
+                    message="Cannot pause offline worker",
+                )
+            if worker.is_paused:
+                return WorkerActionResponse(
+                    success=False,
+                    worker_id=worker_id,
+                    action=action,
+                    message="Worker is already paused",
+                )
+            self._workers[worker_id] = worker.model_copy(update={"is_paused": True})
+            return WorkerActionResponse(
+                success=True,
+                worker_id=worker_id,
+                action=action,
+                message=f"Worker {worker_id} paused - will stop accepting new tasks",
+            )
+
+        if action == WorkerAction.RESUME:
+            if not worker.is_paused:
+                return WorkerActionResponse(
+                    success=False,
+                    worker_id=worker_id,
+                    action=action,
+                    message="Worker is not paused",
+                )
+            self._workers[worker_id] = worker.model_copy(update={"is_paused": False})
+            return WorkerActionResponse(
+                success=True,
+                worker_id=worker_id,
+                action=action,
+                message=f"Worker {worker_id} resumed",
+            )
+
+        if action == WorkerAction.SHUTDOWN:
+            if worker.status == WorkerStatus.OFFLINE:
+                return WorkerActionResponse(
+                    success=False,
+                    worker_id=worker_id,
+                    action=action,
+                    message="Worker is already offline",
+                )
+            return WorkerActionResponse(
+                success=True,
+                worker_id=worker_id,
+                action=action,
+                message=f"Worker {worker_id} will shutdown after current task",
+            )
+
+        if action == WorkerAction.KILL:
+            if worker.status == WorkerStatus.OFFLINE:
+                return WorkerActionResponse(
+                    success=False,
+                    worker_id=worker_id,
+                    action=action,
+                    message="Worker is already offline",
+                )
+            self._workers[worker_id] = worker.model_copy(
+                update={
+                    "status": WorkerStatus.OFFLINE,
+                    "current_task_id": None,
+                    "current_task_name": None,
+                    "current_task_started_at": None,
+                }
+            )
+            return WorkerActionResponse(
+                success=True,
+                worker_id=worker_id,
+                action=action,
+                message=f"Worker {worker_id} killed immediately",
+            )
+
+        return WorkerActionResponse(
+            success=False,
+            worker_id=worker_id,
+            action=action,
+            message=f"Unknown action: {action}",
+        )
+
+    async def get_worker_logs(
+        self,
+        worker_id: str,
+        *,
+        level: str | None = None,
+        search: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> WorkerLogsResponse | None:
+        """Get logs for a specific worker."""
+        if worker_id not in self._workers:
+            return None
+
+        now = datetime.now(UTC)
+        logs = [
+            WorkerLog(
+                timestamp=now - timedelta(seconds=i * 30),
+                level=["INFO", "DEBUG", "WARNING", "ERROR"][i % 4],
+                message=f"Log message {i}",
+                logger_name="async_task_q.worker",
+            )
+            for i in range(20)
+        ]
+
+        if level:
+            logs = [log for log in logs if log.level == level.upper()]
+        if search:
+            logs = [log for log in logs if search.lower() in log.message.lower()]
+
+        total = len(logs)
+        logs = logs[offset : offset + limit]
+
+        return WorkerLogsResponse(
+            worker_id=worker_id,
+            logs=logs,
+            total=total,
+            has_more=offset + len(logs) < total,
+        )
+
+    async def handle_heartbeat(self, request: HeartbeatRequest) -> HeartbeatResponse:
+        """Process a heartbeat from a worker."""
+        now = datetime.now(UTC)
+        worker_id = request.worker_id
+        actions = self._pending_actions.get(worker_id, {})
+
+        return HeartbeatResponse(
+            received=True,
+            timestamp=now,
+            should_pause=actions.get("pause", False),
+            should_shutdown=actions.get("shutdown", False),
+        )
+
+    def add_worker(self, worker: Worker) -> None:
+        """Add a worker to the mock store (for test setup)."""
+        self._workers[worker.id] = worker
+        self._logs[worker.id] = []
+        self._pending_actions[worker.id] = {"pause": False, "shutdown": False}
+
+    def add_logs(self, worker_id: str, logs: list[WorkerLog]) -> None:
+        """Add logs for a worker (for test setup)."""
+        self._logs[worker_id] = logs
+
+    def clear(self) -> None:
+        """Clear all workers (for test cleanup)."""
+        self._workers.clear()
+        self._logs.clear()
+        self._pending_actions.clear()
 
 
 # ============================================================================
@@ -207,6 +449,112 @@ def sample_tasks(task_factory: Callable[..., Task]) -> list[Task]:
     ]
 
 
+@pytest.fixture
+def worker_factory() -> Callable[..., Worker]:
+    """Factory fixture for creating Worker instances with customizable fields.
+
+    Example:
+        def test_something(worker_factory):
+            worker = worker_factory(name="worker-1", status=WorkerStatus.IDLE)
+            assert worker.status == WorkerStatus.IDLE
+    """
+
+    def _create_worker(
+        *,
+        id: str | None = None,
+        name: str = "test-worker",
+        hostname: str | None = "test-host",
+        pid: int | None = 1234,
+        status: WorkerStatus = WorkerStatus.ACTIVE,
+        queues: list[str] | None = None,
+        current_task_id: str | None = None,
+        current_task_name: str | None = None,
+        current_task_started_at: datetime | None = None,
+        tasks_processed: int = 0,
+        tasks_failed: int = 0,
+        avg_task_duration_ms: float | None = None,
+        uptime_seconds: int = 3600,
+        started_at: datetime | None = None,
+        last_heartbeat: datetime | None = None,
+        cpu_usage: float | None = 25.0,
+        memory_usage: float | None = 50.0,
+        memory_mb: int | None = 512,
+        version: str | None = "1.0.0",
+        tags: list[str] | None = None,
+        is_paused: bool = False,
+    ) -> Worker:
+        now = datetime.now(UTC)
+        return Worker(
+            id=id or f"worker-{uuid4().hex[:8]}",
+            name=name,
+            hostname=hostname,
+            pid=pid,
+            status=status,
+            queues=queues or ["default"],
+            current_task_id=current_task_id,
+            current_task_name=current_task_name,
+            current_task_started_at=current_task_started_at,
+            tasks_processed=tasks_processed,
+            tasks_failed=tasks_failed,
+            avg_task_duration_ms=avg_task_duration_ms,
+            uptime_seconds=uptime_seconds,
+            started_at=started_at or (now - timedelta(seconds=uptime_seconds)),
+            last_heartbeat=last_heartbeat or now,
+            cpu_usage=cpu_usage,
+            memory_usage=memory_usage,
+            memory_mb=memory_mb,
+            version=version,
+            tags=tags or [],
+            is_paused=is_paused,
+        )
+
+    return _create_worker
+
+
+@pytest.fixture
+def sample_workers(worker_factory: Callable[..., Worker]) -> list[Worker]:
+    """Generate a set of sample workers for testing."""
+    now = datetime.now(UTC)
+    return [
+        worker_factory(
+            id="worker-1",
+            name="email-worker",
+            hostname="prod-worker-01",
+            status=WorkerStatus.ACTIVE,
+            queues=["emails", "notifications"],
+            current_task_id="task-abc",
+            current_task_name="send-email",
+            current_task_started_at=now - timedelta(seconds=5),
+            tasks_processed=1500,
+            tasks_failed=12,
+            cpu_usage=45.2,
+            memory_usage=62.5,
+        ),
+        worker_factory(
+            id="worker-2",
+            name="payment-worker",
+            hostname="prod-worker-02",
+            status=WorkerStatus.IDLE,
+            queues=["payments"],
+            tasks_processed=500,
+            tasks_failed=3,
+            cpu_usage=5.0,
+            memory_usage=30.0,
+            is_paused=True,
+        ),
+        worker_factory(
+            id="worker-3",
+            name="report-worker",
+            hostname="prod-worker-03",
+            status=WorkerStatus.OFFLINE,
+            queues=["reports"],
+            tasks_processed=100,
+            tasks_failed=1,
+            last_heartbeat=now - timedelta(minutes=5),
+        ),
+    ]
+
+
 # ============================================================================
 # Service Fixtures
 # ============================================================================
@@ -222,6 +570,18 @@ def mock_task_service(sample_tasks: list[Task]) -> MockTaskService:
 def empty_mock_task_service() -> MockTaskService:
     """Create an empty MockTaskService for testing empty states."""
     return MockTaskService()
+
+
+@pytest.fixture
+def mock_worker_service(sample_workers: list[Worker]) -> MockWorkerService:
+    """Create a MockWorkerService populated with sample workers."""
+    return MockWorkerService(workers=sample_workers)
+
+
+@pytest.fixture
+def empty_mock_worker_service() -> MockWorkerService:
+    """Create an empty MockWorkerService for testing empty states."""
+    return MockWorkerService()
 
 
 @pytest.fixture
@@ -245,17 +605,25 @@ def test_settings() -> Settings:
 
 
 @pytest.fixture
-def app(mock_task_service: MockTaskService, test_settings: Settings) -> FastAPI:
+def app(
+    mock_task_service: MockTaskService,
+    mock_worker_service: MockWorkerService,
+    test_settings: Settings,
+) -> FastAPI:
     """Create a FastAPI app with mocked dependencies."""
     app: FastAPI = create_monitoring_app()
 
     async def _override_get_task_service() -> MockTaskService:
         return mock_task_service
 
+    async def _override_get_worker_service() -> MockWorkerService:
+        return mock_worker_service
+
     def _override_get_settings() -> Settings:
         return test_settings
 
     app.dependency_overrides[get_task_service] = _override_get_task_service
+    app.dependency_overrides[get_worker_service] = _override_get_worker_service
     app.dependency_overrides[get_settings] = _override_get_settings
 
     return app
@@ -274,11 +642,12 @@ def sync_client(app: FastAPI) -> Iterator[TestClient]:
         yield client
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_client(app: FastAPI) -> AsyncIterator[AsyncClient]:
     """Async test client for async tests.
 
     Example:
+        @pytest.mark.asyncio
         async def test_health(async_client):
             response = await async_client.get("/api/")
             assert response.status_code == 200
@@ -328,10 +697,10 @@ def pytest_collection_modifyitems(
     items: list[pytest.Item],
 ) -> None:
     """Modify test collection to auto-mark async tests."""
-    import asyncio
+    import inspect
 
     for item in items:
         # Auto-add asyncio marker to async test functions
         if isinstance(item, pytest.Function):
-            if asyncio.iscoroutinefunction(item.obj):
+            if inspect.iscoroutinefunction(item.obj):
                 item.add_marker(pytest.mark.asyncio)
