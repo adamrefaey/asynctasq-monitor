@@ -12,6 +12,7 @@ dependencies = [
     "fastapi[standard]>=0.122.0",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.9.1",   # Settings management with env vars
+    "prometheus-client>=0.22.0",  # Prometheus metrics exporter
 ]
 
 [project.urls]
