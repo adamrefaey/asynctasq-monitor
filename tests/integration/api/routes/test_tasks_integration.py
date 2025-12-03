@@ -4,17 +4,21 @@ import pytest
 
 @pytest.mark.integration
 def test_list_tasks_basic(app):
+    """Test listing all tasks returns expected count from shared fixtures."""
     with TestClient(app) as client:
         resp = client.get("/api/tasks")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["total"] == 3
+        # sample_tasks fixture provides 4 tasks
+        assert data["total"] == 4
 
 
 @pytest.mark.integration
 def test_list_tasks_with_filters(app):
+    """Test listing tasks with status and queue filters."""
     with TestClient(app) as client:
-        resp = client.get("/api/tasks", params={"status": "failed", "queue": "q1"})
+        # t2 is FAILED in 'payments' queue (not q1)
+        resp = client.get("/api/tasks", params={"status": "failed", "queue": "payments"})
         assert resp.status_code == 200
         data = resp.json()
         assert data["total"] == 1

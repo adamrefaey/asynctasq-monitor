@@ -20,7 +20,7 @@ def test_mock_task_service_unit(mock_task_service: Any) -> None:
     # get_tasks no filters
     filters = TaskFilters(search=None)
     items, total = async_run(svc.get_tasks(filters))
-    assert total == 3
+    assert total == 4
 
     # filter by status
     filters = TaskFilters(status=TaskStatus.FAILED, search=None)
