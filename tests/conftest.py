@@ -18,9 +18,22 @@ import pytest
 import pytest_asyncio
 from starlette.testclient import TestClient
 
-from async_task_q_monitor.api.dependencies import get_task_service, get_worker_service
+from async_task_q_monitor.api.dependencies import (
+    get_queue_service,
+    get_task_service,
+    get_worker_service,
+)
 from async_task_q_monitor.api.main import create_monitoring_app
 from async_task_q_monitor.config import Settings, get_settings
+from async_task_q_monitor.models.queue import (
+    Queue,
+    QueueActionResponse,
+    QueueClearResponse,
+    QueueFilters,
+    QueueListResponse,
+    QueueMetrics,
+    QueueStatus,
+)
 from async_task_q_monitor.models.task import Task, TaskFilters, TaskStatus
 from async_task_q_monitor.models.worker import (
     HeartbeatRequest,
@@ -334,6 +347,193 @@ class MockWorkerService:
         self._pending_actions.clear()
 
 
+class MockQueueService:
+    """Mock QueueService for testing without actual queue backend."""
+
+    def __init__(self, *, queues: list[Queue] | None = None) -> None:
+        """Initialize with optional list of queues."""
+        self._queues: dict[str, Queue] = {}
+        self._metrics: dict[str, list[QueueMetrics]] = {}
+        if queues:
+            for q in queues:
+                self._queues[q.name] = q
+                self._metrics[q.name] = []
+
+    async def get_queues(
+        self,
+        filters: QueueFilters | None = None,
+    ) -> QueueListResponse:
+        """Return filtered queues as QueueListResponse."""
+        items = list(self._queues.values())
+
+        if filters:
+            if filters.status is not None:
+                items = [q for q in items if q.status == filters.status]
+            if filters.search is not None:
+                search_lower = filters.search.lower()
+                items = [q for q in items if search_lower in q.name.lower()]
+            if filters.min_depth is not None:
+                items = [q for q in items if q.depth >= filters.min_depth]
+            if filters.alert_level is not None:
+                items = [q for q in items if q.alert_level == filters.alert_level]
+
+        return QueueListResponse(items=items, total=len(items))
+
+    async def get_queue_by_name(self, queue_name: str) -> Queue | None:
+        """Return a queue by name or None if not found."""
+        return self._queues.get(queue_name)
+
+    async def pause_queue(self, queue_name: str, reason: str | None = None) -> QueueActionResponse:
+        """Pause a queue."""
+        queue = self._queues.get(queue_name)
+        if queue is None:
+            return QueueActionResponse(
+                success=False,
+                queue_name=queue_name,
+                action="pause",
+                message=f"Queue '{queue_name}' not found",
+            )
+
+        if queue.status == QueueStatus.PAUSED:
+            return QueueActionResponse(
+                success=False,
+                queue_name=queue_name,
+                action="pause",
+                message=f"Queue '{queue_name}' is already paused",
+            )
+
+        # Update queue status
+        self._queues[queue_name] = Queue(
+            name=queue.name,
+            status=QueueStatus.PAUSED,
+            depth=queue.depth,
+            processing=queue.processing,
+            completed_total=queue.completed_total,
+            failed_total=queue.failed_total,
+            workers_assigned=queue.workers_assigned,
+            avg_duration_ms=queue.avg_duration_ms,
+            throughput_per_minute=queue.throughput_per_minute,
+            priority=queue.priority,
+            max_retries=queue.max_retries,
+            created_at=queue.created_at,
+            paused_at=datetime.now(UTC),
+        )
+
+        return QueueActionResponse(
+            success=True,
+            queue_name=queue_name,
+            action="pause",
+            message=f"Queue '{queue_name}' paused successfully"
+            + (f" - Reason: {reason}" if reason else ""),
+        )
+
+    async def resume_queue(self, queue_name: str) -> QueueActionResponse:
+        """Resume a paused queue."""
+        queue = self._queues.get(queue_name)
+        if queue is None:
+            return QueueActionResponse(
+                success=False,
+                queue_name=queue_name,
+                action="resume",
+                message=f"Queue '{queue_name}' not found",
+            )
+
+        if queue.status != QueueStatus.PAUSED:
+            return QueueActionResponse(
+                success=False,
+                queue_name=queue_name,
+                action="resume",
+                message=f"Queue '{queue_name}' is not paused",
+            )
+
+        # Update queue status
+        self._queues[queue_name] = Queue(
+            name=queue.name,
+            status=QueueStatus.ACTIVE,
+            depth=queue.depth,
+            processing=queue.processing,
+            completed_total=queue.completed_total,
+            failed_total=queue.failed_total,
+            workers_assigned=queue.workers_assigned,
+            avg_duration_ms=queue.avg_duration_ms,
+            throughput_per_minute=queue.throughput_per_minute,
+            priority=queue.priority,
+            max_retries=queue.max_retries,
+            created_at=queue.created_at,
+            paused_at=None,
+        )
+
+        return QueueActionResponse(
+            success=True,
+            queue_name=queue_name,
+            action="resume",
+            message=f"Queue '{queue_name}' resumed successfully",
+        )
+
+    async def clear_queue(self, queue_name: str) -> QueueClearResponse:
+        """Clear all pending tasks from a queue."""
+        queue = self._queues.get(queue_name)
+        if queue is None:
+            return QueueClearResponse(
+                success=False,
+                queue_name=queue_name,
+                tasks_cleared=0,
+                message=f"Queue '{queue_name}' not found",
+            )
+
+        pending_count = queue.depth
+
+        # Update queue with cleared depth
+        self._queues[queue_name] = Queue(
+            name=queue.name,
+            status=queue.status,
+            depth=0,
+            processing=queue.processing,
+            completed_total=queue.completed_total,
+            failed_total=queue.failed_total,
+            workers_assigned=queue.workers_assigned,
+            avg_duration_ms=queue.avg_duration_ms,
+            throughput_per_minute=queue.throughput_per_minute,
+            priority=queue.priority,
+            max_retries=queue.max_retries,
+            created_at=queue.created_at,
+            paused_at=queue.paused_at,
+        )
+
+        return QueueClearResponse(
+            success=True,
+            queue_name=queue_name,
+            tasks_cleared=pending_count,
+            message=f"Cleared {pending_count} tasks from queue '{queue_name}'",
+        )
+
+    async def get_queue_metrics(
+        self,
+        queue_name: str,
+        *,
+        from_time: datetime | None = None,
+        to_time: datetime | None = None,
+        interval_minutes: int = 5,
+    ) -> list[QueueMetrics]:
+        """Get historical metrics for a queue."""
+        _ = from_time, to_time, interval_minutes
+        return self._metrics.get(queue_name, [])
+
+    def add_queue(self, queue: Queue) -> None:
+        """Add a queue to the mock store (for test setup)."""
+        self._queues[queue.name] = queue
+        self._metrics[queue.name] = []
+
+    def add_metrics(self, queue_name: str, metrics: list[QueueMetrics]) -> None:
+        """Add metrics for a queue (for test setup)."""
+        self._metrics[queue_name] = metrics
+
+    def clear(self) -> None:
+        """Clear all queues (for test cleanup)."""
+        self._queues.clear()
+        self._metrics.clear()
+
+
 # ============================================================================
 # Factory Fixtures
 # ============================================================================
@@ -555,6 +755,112 @@ def sample_workers(worker_factory: Callable[..., Worker]) -> list[Worker]:
     ]
 
 
+@pytest.fixture
+def queue_factory() -> Callable[..., Queue]:
+    """Factory fixture for creating Queue instances with customizable fields.
+
+    Example:
+        def test_something(queue_factory):
+            queue = queue_factory(name="my-queue", status=QueueStatus.PAUSED)
+            assert queue.status == QueueStatus.PAUSED
+    """
+
+    def _create_queue(
+        *,
+        name: str = "test-queue",
+        status: QueueStatus = QueueStatus.ACTIVE,
+        depth: int = 0,
+        processing: int = 0,
+        completed_total: int = 0,
+        failed_total: int = 0,
+        workers_assigned: int = 0,
+        avg_duration_ms: float | None = None,
+        throughput_per_minute: float | None = None,
+        priority: int = 0,
+        max_retries: int = 3,
+        created_at: datetime | None = None,
+        paused_at: datetime | None = None,
+    ) -> Queue:
+        return Queue(
+            name=name,
+            status=status,
+            depth=depth,
+            processing=processing,
+            completed_total=completed_total,
+            failed_total=failed_total,
+            workers_assigned=workers_assigned,
+            avg_duration_ms=avg_duration_ms,
+            throughput_per_minute=throughput_per_minute,
+            priority=priority,
+            max_retries=max_retries,
+            created_at=created_at,
+            paused_at=paused_at,
+        )
+
+    return _create_queue
+
+
+@pytest.fixture
+def sample_queues(queue_factory: Callable[..., Queue]) -> list[Queue]:
+    """Generate a set of sample queues for testing."""
+    now = datetime.now(UTC)
+    return [
+        queue_factory(
+            name="emails",
+            status=QueueStatus.ACTIVE,
+            depth=42,
+            processing=5,
+            completed_total=15000,
+            failed_total=150,
+            workers_assigned=3,
+            avg_duration_ms=1250.5,
+            throughput_per_minute=45.2,
+            priority=1,
+            created_at=now - timedelta(days=30),
+        ),
+        queue_factory(
+            name="payments",
+            status=QueueStatus.PAUSED,
+            depth=15,
+            processing=0,
+            completed_total=5000,
+            failed_total=50,
+            workers_assigned=0,
+            avg_duration_ms=2500.0,
+            throughput_per_minute=0.0,
+            priority=2,
+            created_at=now - timedelta(days=30),
+            paused_at=now - timedelta(hours=2),
+        ),
+        queue_factory(
+            name="reports",
+            status=QueueStatus.ACTIVE,
+            depth=150,  # Warning level (>100)
+            processing=2,
+            completed_total=1000,
+            failed_total=25,
+            workers_assigned=1,
+            avg_duration_ms=30000.0,
+            throughput_per_minute=2.5,
+            priority=0,
+            created_at=now - timedelta(days=15),
+        ),
+        queue_factory(
+            name="notifications",
+            status=QueueStatus.ACTIVE,
+            depth=550,  # Critical level (>500)
+            processing=10,
+            completed_total=50000,
+            failed_total=500,
+            workers_assigned=5,
+            avg_duration_ms=500.0,
+            throughput_per_minute=120.0,
+            priority=0,
+            created_at=now - timedelta(days=60),
+        ),
+    ]
+
+
 # ============================================================================
 # Service Fixtures
 # ============================================================================
@@ -585,6 +891,18 @@ def empty_mock_worker_service() -> MockWorkerService:
 
 
 @pytest.fixture
+def mock_queue_service(sample_queues: list[Queue]) -> MockQueueService:
+    """Create a MockQueueService populated with sample queues."""
+    return MockQueueService(queues=sample_queues)
+
+
+@pytest.fixture
+def empty_mock_queue_service() -> MockQueueService:
+    """Create an empty MockQueueService for testing empty states."""
+    return MockQueueService()
+
+
+@pytest.fixture
 def test_settings() -> Settings:
     """Create test-specific settings."""
     return Settings(
@@ -608,6 +926,7 @@ def test_settings() -> Settings:
 def app(
     mock_task_service: MockTaskService,
     mock_worker_service: MockWorkerService,
+    mock_queue_service: MockQueueService,
     test_settings: Settings,
 ) -> FastAPI:
     """Create a FastAPI app with mocked dependencies."""
@@ -619,11 +938,15 @@ def app(
     async def _override_get_worker_service() -> MockWorkerService:
         return mock_worker_service
 
+    async def _override_get_queue_service() -> MockQueueService:
+        return mock_queue_service
+
     def _override_get_settings() -> Settings:
         return test_settings
 
     app.dependency_overrides[get_task_service] = _override_get_task_service
     app.dependency_overrides[get_worker_service] = _override_get_worker_service
+    app.dependency_overrides[get_queue_service] = _override_get_queue_service
     app.dependency_overrides[get_settings] = _override_get_settings
 
     return app

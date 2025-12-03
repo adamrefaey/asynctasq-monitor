@@ -14,6 +14,7 @@ from typing import Annotated
 from fastapi import Depends, Query, Request
 
 from async_task_q_monitor.config import Settings, get_settings
+from async_task_q_monitor.services.queue_service import QueueService
 from async_task_q_monitor.services.task_service import TaskService
 from async_task_q_monitor.services.worker_service import WorkerService
 
@@ -83,6 +84,32 @@ def get_worker_service() -> WorkerService:
 
 
 WorkerServiceDep = Annotated[WorkerService, Depends(get_worker_service)]
+
+
+# ---------------------------------------------------------------------------
+# Queue Service Dependency
+# ---------------------------------------------------------------------------
+
+
+@lru_cache
+def _get_queue_service_singleton() -> QueueService:
+    """Internal singleton factory for QueueService.
+
+    Using lru_cache for lightweight singleton pattern.
+    """
+    return QueueService()
+
+
+def get_queue_service() -> QueueService:
+    """Return a QueueService for dependency injection.
+
+    For production, this uses a singleton pattern.
+    For testing, this dependency can be overridden in app.dependency_overrides.
+    """
+    return _get_queue_service_singleton()
+
+
+QueueServiceDep = Annotated[QueueService, Depends(get_queue_service)]
 
 
 # ---------------------------------------------------------------------------

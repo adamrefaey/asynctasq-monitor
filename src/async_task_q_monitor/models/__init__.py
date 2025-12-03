@@ -4,6 +4,19 @@ This module re-exports the primary Pydantic models used by the API.
 All models follow Pydantic v2 best practices.
 """
 
+# Re-export queue models
+from .queue import (
+    Queue,
+    QueueActionRequest,
+    QueueActionResponse,
+    QueueAlertLevel,
+    QueueClearResponse,
+    QueueFilters,
+    QueueListResponse,
+    QueueMetrics,
+    QueueStatus,
+)
+
 # Re-export task models for convenient imports
 from .task import Task, TaskFilters, TaskListResponse, TaskStatus
 
@@ -25,6 +38,16 @@ from .worker import (
 )
 
 __all__ = [
+    # Queue models
+    "Queue",
+    "QueueActionRequest",
+    "QueueActionResponse",
+    "QueueAlertLevel",
+    "QueueClearResponse",
+    "QueueFilters",
+    "QueueListResponse",
+    "QueueMetrics",
+    "QueueStatus",
     # Task models
     "Task",
     "TaskFilters",
