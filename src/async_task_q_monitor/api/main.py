@@ -83,7 +83,7 @@ def create_monitoring_app(
         )
 
         app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
-        app.include_router(tasks.router, prefix="/api", tags=["tasks"])
+        app.include_router(tasks.router, prefix="/api")
         app.include_router(workers.router, prefix="/api", tags=["workers"])
         app.include_router(queues.router, prefix="/api", tags=["queues"])
         app.include_router(metrics.router, prefix="/api", tags=["metrics"])
