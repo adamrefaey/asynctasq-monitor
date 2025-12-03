@@ -68,8 +68,16 @@ build-python:
     uv build
     @echo "✅ Python package built to dist/"
 
+# Preview frontend build locally
+preview-frontend:
+    cd frontend && pnpm preview
+
 # Clean build artifacts
-clean:
+clean: clean-python clean-frontend
+    @echo "✅ Cleaned all build artifacts"
+
+# Clean Python build artifacts
+clean-python:
     rm -rf dist/
     rm -rf src/async_task_q_monitor/static/assets/
     rm -f src/async_task_q_monitor/static/index.html
@@ -81,7 +89,10 @@ clean:
     find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
     find . -type f -name "*.pyc" -delete 2>/dev/null || true
     find . -type f -name ".coverage" -delete 2>/dev/null || true
-    @echo "✅ Cleaned build artifacts"
+
+# Clean frontend build artifacts
+clean-frontend:
+    cd frontend && rm -rf dist/ node_modules/.vite
 
 # =============================================================================
 # Linting & Formatting
@@ -127,17 +138,30 @@ typecheck:
 typecheck-frontend:
     cd frontend && pnpm typecheck
 
-# Run all checks (format, lint, typecheck)
+# Run all checks (format, lint, typecheck) for both backend and frontend
 check: format lint typecheck typecheck-frontend
     @echo "✅ All checks passed"
+
+# Run frontend check (format + lint + typecheck combined)
+check-frontend:
+    cd frontend && pnpm check
 
 # =============================================================================
 # Testing
 # =============================================================================
 
+# Run all tests (Python + Frontend)
+test: test-backend test-frontend
+    @echo "✅ All tests passed"
+
 # Run all Python tests
-test:
+test-backend:
     uv run pytest
+
+# Run frontend tests (when available)
+test-frontend:
+    @echo "⚠️  Frontend tests not yet configured"
+    @echo "Add test framework (Vitest) and update this command"
 
 # Run unit tests only
 test-unit:
@@ -147,9 +171,14 @@ test-unit:
 test-integration:
     uv run pytest -m integration
 
-# Run tests with coverage report
+# Run backend tests with coverage report
 test-cov:
     uv run pytest --cov=async_task_q_monitor --cov-branch --cov-report=term-missing --cov-report=html
+
+# Run frontend tests with coverage (when available)
+test-cov-frontend:
+    @echo "⚠️  Frontend test coverage not yet configured"
+    @echo "Add test framework (Vitest) and update this command"
 
 # Show test coverage in browser
 coverage-html: test-cov
@@ -163,8 +192,8 @@ test-profile:
 # CI/CD
 # =============================================================================
 
-# Run all CI checks locally
-ci: format lint typecheck test
+# Run all CI checks locally (Python + Frontend)
+ci: format lint typecheck typecheck-frontend test
     @echo "✅ All CI checks passed!"
 
 # Run pre-commit on all files
@@ -183,9 +212,17 @@ pre-commit-update:
 security:
     uv run bandit -r src/async_task_q_monitor -ll
 
-# Run dependency security audit
-audit:
+# Run dependency security audit (Python + Frontend)
+audit: audit-python audit-frontend
+    @echo "✅ All security audits complete"
+
+# Run Python dependency security audit
+audit-python:
     uv run pip-audit
+
+# Run frontend dependency security audit
+audit-frontend:
+    cd frontend && pnpm audit
 
 # =============================================================================
 # Publishing
@@ -231,10 +268,16 @@ info:
     @echo ""
     @echo "Run 'just --list' to see all available commands"
 
-# Show outdated dependencies
-outdated:
+# Show outdated dependencies (Python + Frontend)
+outdated: outdated-python outdated-frontend
+
+# Show outdated Python dependencies
+outdated-python:
     @echo "Python dependencies:"
     uv pip list --outdated
+
+# Show outdated frontend dependencies
+outdated-frontend:
     @echo ""
     @echo "Frontend dependencies:"
     cd frontend && pnpm outdated
