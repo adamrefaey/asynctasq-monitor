@@ -1,0 +1,145 @@
+# Default recipe to display help
+default:
+	@just --list
+
+# Install package with all optional dependencies
+install:
+	uv sync --all-extras --group dev
+
+# Setup pre-commit hooks
+setup-hooks:
+	uv run pre-commit install
+	@echo "✅ Pre-commit hooks installed successfully!"
+
+# Format code with Ruff
+format:
+	uv run ruff format .
+
+# Auto-fix linting issues
+lint-fix:
+	uv run ruff check --fix .
+
+# Type check with Pyright
+typecheck:
+	uv run pyright
+
+# Run all CI checks locally (format, lint, typecheck, test)
+ci: format lint-fix typecheck test
+	@echo "✅ All CI checks passed!"
+
+# Run pre-commit on all files
+pre-commit:
+	uv run pre-commit run --all-files
+
+# Run pre-commit autoupdate
+pre-commit-update:
+	uv run pre-commit autoupdate
+
+# Clean up cache files and directories
+clean:
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+	find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	find . -type d -name ".ruff_cache" -exec rm -rf {} +
+	find . -type d -name "htmlcov" -exec rm -rf {} +
+	find . -type d -name ".coverage" -exec rm -rf {} +
+	find . -type d -name "*.egg-info" -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+	find . -type f -name "*.pyo" -delete
+	find . -type f -name "*.cover" -delete
+	find . -type f -name ".coverage" -delete
+	find . -type f -name ".coverage.*" -delete
+
+# Run all tests
+test:
+	uv run pytest
+
+# Run unit tests only
+test-unit:
+	uv run pytest -m unit
+
+# Run integration tests only (requires Docker services)
+test-integration:
+	uv run pytest -m integration
+
+# Run all tests with coverage report
+test-cov:
+	uv run pytest --cov=async_task_q --cov-branch --cov-report=term-missing --cov-report=html
+
+# Show test coverage in browser
+coverage-html: test-cov
+	open htmlcov/index.html || xdg-open htmlcov/index.html
+
+# Run tests with specific Python version
+test-py VERSION:
+	uv run --python {{VERSION}} pytest
+
+# Run security checks with bandit
+security:
+	uv run bandit -r src/async_task_q -ll
+
+# Run dependency security audit
+audit:
+	uv run pip-audit
+
+# Show outdated dependencies
+outdated:
+	uv pip list --outdated
+
+# Initialize project (install deps + setup hooks)
+init: install setup-hooks
+	@echo "✅ Project initialized successfully!"
+	@echo "Run 'just services-up' to start Docker services"
+	@echo "Run 'just test' to verify everything is working"
+
+# Show ruff statistics
+lint-stats:
+	uv run ruff check --statistics .
+
+# Profile tests (show slowest tests)
+test-profile:
+	uv run pytest --durations=10
+
+# Run tests with verbose output
+test-verbose:
+	uv run pytest -vv
+
+# Build the package
+build:
+	uv build
+
+# Publish to PyPI (requires credentials)
+publish:
+	uv build
+	uv run python -m pip install --upgrade build twine
+	uv run python -m twine check dist/*
+	uv publish
+
+# Publish to Test PyPI
+publish-test:
+	uv build
+	uv run python -m pip install --upgrade build twine
+	uv run python -m twine check dist/*
+	uv publish --index-url https://test.pypi.org/legacy/
+
+# Create and push a git tag (usage: just tag v1.2.3)
+tag TAG:
+	@if [ "$(printf '%s' '{{TAG}}' | cut -c1)" != "v" ]; then \
+		echo "Tag should start with 'v', e.g. v1.2.3"; exit 1; \
+	fi
+	git tag {{TAG}}
+	git push origin {{TAG}}
+	@echo "✅ Pushed {{TAG}}"
+
+
+# Type check with Pyright
+pyright:
+	uv pip install pyright
+	uv run pyright
+
+# Show project info
+info:
+	@echo "Project: async-task-q-monitor"
+	@echo "Python: $(uv run python --version)"
+	@echo "UV: $(uv --version)"
+	@echo ""
+	@echo "Run 'just --list' to see all available commands"
