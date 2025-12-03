@@ -1,0 +1,92 @@
+# Pre-commit hooks configuration - tuned for fast local checks and reliable CI
+# See https://pre-commit.com for details
+
+default_language_version:
+  # Use the `python` executable from the active environment so pre-commit
+  # can reuse your project's `.venv` if it's activated before installing
+  # hooks. This avoids duplicating heavy dependencies in the pre-commit
+  # environment and keeps local dev faster/consistent with CI.
+  python: python
+
+repos:
+  # Ruff - fast linter + formatter running from backend/ directory
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff (backend)
+        entry: bash -c 'cd backend && uv run ruff check --fix "${@#backend/}"' --
+        language: system
+        types_or: [python, pyi]
+        files: ^backend/
+      - id: ruff-format
+        name: ruff format (backend)
+        entry: bash -c 'cd backend && uv run ruff format "${@#backend/}"' --
+        language: system
+        types_or: [python, pyi]
+        files: ^backend/
+
+  # Pyright - static type checker running from backend/ directory
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright (backend)
+        entry: bash -c 'cd backend && uv run pyright'
+        language: system
+        types_or: [python, pyi]
+        files: ^backend/
+        pass_filenames: false
+
+  # Standard hooks for whitespace, JSON/TOML/YAML checks and basic safety
+  # Exclude frontend/ since it's a separate project with its own tooling
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^frontend/
+      - id: end-of-file-fixer
+        exclude: ^frontend/
+      - id: check-yaml
+        exclude: ^frontend/
+      - id: check-toml
+        exclude: ^frontend/
+      - id: check-json
+        exclude: ^frontend/
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+        exclude: ^frontend/
+      - id: check-merge-conflict
+        exclude: ^frontend/
+      - id: check-case-conflict
+        exclude: ^frontend/
+      - id: detect-private-key
+        exclude: ^frontend/
+      - id: mixed-line-ending
+        args: [--fix=lf]
+        exclude: ^frontend/
+
+  # Validate pyproject.toml schema. In CI without network, consider adding
+  # 'validate-pyproject-schema-store[all]' as an additional_dependency here.
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.24.1
+    hooks:
+      - id: validate-pyproject
+        # additional_dependencies: ["validate-pyproject-schema-store[all]"]
+
+  # Secrets detection (gitleaks). Use a baseline or CI run to minimize noise.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+        args: ["--redact"]
+
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ""
+  autoupdate_commit_msg: "[pre-commit.ci] pre-commit autoupdate"
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false
