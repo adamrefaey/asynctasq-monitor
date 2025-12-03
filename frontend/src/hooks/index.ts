@@ -15,6 +15,30 @@ export {
 	useWorkers as useWorkersDashboard,
 } from "./useDashboard";
 
+// Keyboard shortcuts hook
+export {
+	type Shortcut,
+	type ShortcutsByCategory,
+	useKeyboardShortcuts,
+} from "./useKeyboardShortcuts";
+
+// Settings store
+export {
+	type DateFormat,
+	type LogLevel,
+	type SettingsStore,
+	type TableDensity,
+	type ThemeSetting,
+	type TimezoneOption,
+	useDateFormatSetting,
+	useItemsPerPage,
+	useRefreshInterval,
+	useSettingsStore,
+	useTableDensity,
+	useThemeSetting,
+	useTimezone,
+} from "./useSettings";
+
 // Task hooks
 export {
 	taskKeys,

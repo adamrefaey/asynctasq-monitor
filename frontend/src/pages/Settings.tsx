@@ -1,3 +1,8 @@
+/**
+ * Settings page component.
+ * Allows users to configure dashboard preferences with persistence.
+ */
+
 import {
 	Bell,
 	Clock,
@@ -5,7 +10,6 @@ import {
 	Moon,
 	Palette,
 	RefreshCw,
-	Save,
 	Server,
 	Shield,
 	Sun,
@@ -14,6 +18,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button, Card, TextField } from "@/components/ui";
+import { type LogLevel, type TimezoneOption, useSettingsStore } from "@/hooks/useSettings";
 import { useTheme } from "@/hooks/useTheme";
 
 type SettingsSection = "general" | "connection" | "notifications" | "advanced";
@@ -97,49 +102,65 @@ function NavButton({
 }
 
 export default function Settings() {
-	const { theme, setTheme } = useTheme();
+	const { theme: resolvedTheme, setTheme } = useTheme();
 	const [section, setSection] = useState<SettingsSection>("general");
-	const [hasChanges, setHasChanges] = useState(false);
 
-	// Form state
-	const [settings, setSettings] = useState({
-		// General
-		refreshInterval: "5",
-		timezone: "UTC",
-		dateFormat: "relative",
+	// Use Zustand store for all settings
+	const {
+		theme,
+		timezone,
+		dateFormat,
+		refreshInterval,
+		tableDensity,
+		itemsPerPage,
+		apiUrl,
+		wsUrl,
+		timeout,
+		enableNotifications,
+		notifyOnFailure,
+		notifyOnComplete,
+		soundEnabled,
+		debugMode,
+		cacheEnabled,
+		maxRetries,
+		logLevel,
+		setTimezone,
+		setDateFormat,
+		setRefreshInterval,
+		setTableDensity,
+		setItemsPerPage,
+		setApiUrl,
+		setWsUrl,
+		setTimeout: setTimeoutSetting,
+		setEnableNotifications,
+		setNotifyOnFailure,
+		setNotifyOnComplete,
+		setSoundEnabled,
+		setDebugMode,
+		setCacheEnabled,
+		setMaxRetries,
+		setLogLevel,
+		resetToDefaults,
+		clearAllData,
+	} = useSettingsStore();
 
-		// Connection
-		apiUrl: "http://localhost:8000",
-		wsUrl: "ws://localhost:8000/ws",
-		timeout: "30",
-
-		// Notifications
-		enableNotifications: true,
-		notifyOnFailure: true,
-		notifyOnComplete: false,
-		soundEnabled: false,
-
-		// Advanced
-		debugMode: false,
-		cacheEnabled: true,
-		maxRetries: "3",
-		logLevel: "info",
-	});
-
-	const updateSetting = <K extends keyof typeof settings>(key: K, value: (typeof settings)[K]) => {
-		setSettings((prev) => ({ ...prev, [key]: value }));
-		setHasChanges(true);
-	};
-
-	const handleSave = () => {
-		// TODO: Implement settings persistence via API
-		// await api.settings.save(settings);
-		setHasChanges(false);
+	// Track theme setting separately to update both store and useTheme hook
+	const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
+		useSettingsStore.getState().setTheme(newTheme);
+		setTheme(newTheme);
 	};
 
 	const handleReset = () => {
-		// TODO: Implement reset to defaults
-		setHasChanges(false);
+		resetToDefaults();
+		// Also reset the theme hook
+		setTheme("system");
+	};
+
+	const handleClearData = () => {
+		if (window.confirm("Are you sure you want to clear all data? This action cannot be undone.")) {
+			clearAllData();
+			setTheme("system");
+		}
 	};
 
 	return (
@@ -153,13 +174,9 @@ export default function Settings() {
 					</p>
 				</div>
 				<div className="flex gap-2">
-					<Button variant="outline" onPress={handleReset} isDisabled={!hasChanges}>
+					<Button variant="outline" onPress={handleReset}>
 						<RefreshCw className="h-4 w-4" />
-						Reset
-					</Button>
-					<Button variant="primary" onPress={handleSave} isDisabled={!hasChanges}>
-						<Save className="h-4 w-4" />
-						Save Changes
+						Reset to Defaults
 					</Button>
 				</div>
 			</div>
@@ -204,7 +221,7 @@ export default function Settings() {
 							</Card.Header>
 							<Card.Content>
 								<SettingRow
-									icon={theme === "dark" ? Moon : Sun}
+									icon={resolvedTheme === "dark" ? Moon : Sun}
 									title="Theme"
 									description="Choose your preferred color scheme"
 								>
@@ -214,7 +231,7 @@ export default function Settings() {
 												key={t}
 												variant={theme === t ? "primary" : "outline"}
 												size="sm"
-												onPress={() => setTheme(t)}
+												onPress={() => handleThemeChange(t)}
 											>
 												{t === "light" && <Sun className="h-4 w-4" />}
 												{t === "dark" && <Moon className="h-4 w-4" />}
@@ -233,8 +250,8 @@ export default function Settings() {
 									<div className="flex items-center gap-2">
 										<TextField
 											type="number"
-											value={settings.refreshInterval}
-											onChange={(v) => updateSetting("refreshInterval", v)}
+											value={String(refreshInterval)}
+											onChange={(v) => setRefreshInterval(Number(v) || 5)}
 											className="w-20"
 										/>
 										<span className="text-sm text-gray-500">seconds</span>
@@ -247,8 +264,8 @@ export default function Settings() {
 									description="Timezone for displaying dates and times"
 								>
 									<select
-										value={settings.timezone}
-										onChange={(e) => updateSetting("timezone", e.target.value)}
+										value={timezone}
+										onChange={(e) => setTimezone(e.target.value as TimezoneOption)}
 										className="
                       rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
                       dark:border-gray-600 dark:bg-gray-800 dark:text-white
@@ -256,6 +273,7 @@ export default function Settings() {
                     "
 									>
 										<option value="UTC">UTC</option>
+										<option value="auto">Auto-detect</option>
 										<option value="America/New_York">Eastern Time</option>
 										<option value="America/Los_Angeles">Pacific Time</option>
 										<option value="Europe/London">London</option>
@@ -272,11 +290,49 @@ export default function Settings() {
 										{(["relative", "absolute"] as const).map((format) => (
 											<Button
 												key={format}
-												variant={settings.dateFormat === format ? "primary" : "outline"}
+												variant={dateFormat === format ? "primary" : "outline"}
 												size="sm"
-												onPress={() => updateSetting("dateFormat", format)}
+												onPress={() => setDateFormat(format)}
 											>
 												{format.charAt(0).toUpperCase() + format.slice(1)}
+											</Button>
+										))}
+									</div>
+								</SettingRow>
+
+								<SettingRow
+									icon={Palette}
+									title="Table Density"
+									description="Adjust the spacing of table rows"
+								>
+									<div className="flex gap-2">
+										{(["compact", "comfortable", "spacious"] as const).map((density) => (
+											<Button
+												key={density}
+												variant={tableDensity === density ? "primary" : "outline"}
+												size="sm"
+												onPress={() => setTableDensity(density)}
+											>
+												{density.charAt(0).toUpperCase() + density.slice(1)}
+											</Button>
+										))}
+									</div>
+								</SettingRow>
+
+								<SettingRow
+									icon={Zap}
+									title="Items Per Page"
+									description="Default number of items per page in tables"
+								>
+									<div className="flex gap-2">
+										{([25, 50, 100] as const).map((count) => (
+											<Button
+												key={count}
+												variant={itemsPerPage === count ? "primary" : "outline"}
+												size="sm"
+												onPress={() => setItemsPerPage(count)}
+											>
+												{count}
 											</Button>
 										))}
 									</div>
@@ -294,11 +350,7 @@ export default function Settings() {
 							</Card.Header>
 							<Card.Content>
 								<SettingRow icon={Server} title="API URL" description="Backend API endpoint URL">
-									<TextField
-										value={settings.apiUrl}
-										onChange={(v) => updateSetting("apiUrl", v)}
-										className="w-64"
-									/>
+									<TextField value={apiUrl} onChange={(v) => setApiUrl(v)} className="w-64" />
 								</SettingRow>
 
 								<SettingRow
@@ -306,11 +358,7 @@ export default function Settings() {
 									title="WebSocket URL"
 									description="Real-time updates WebSocket endpoint"
 								>
-									<TextField
-										value={settings.wsUrl}
-										onChange={(v) => updateSetting("wsUrl", v)}
-										className="w-64"
-									/>
+									<TextField value={wsUrl} onChange={(v) => setWsUrl(v)} className="w-64" />
 								</SettingRow>
 
 								<SettingRow
@@ -321,8 +369,8 @@ export default function Settings() {
 									<div className="flex items-center gap-2">
 										<TextField
 											type="number"
-											value={settings.timeout}
-											onChange={(v) => updateSetting("timeout", v)}
+											value={String(timeout)}
+											onChange={(v) => setTimeoutSetting(Number(v) || 30)}
 											className="w-20"
 										/>
 										<span className="text-sm text-gray-500">seconds</span>
@@ -367,8 +415,8 @@ export default function Settings() {
 									description="Show browser notifications for events"
 								>
 									<Toggle
-										checked={settings.enableNotifications}
-										onChange={(v) => updateSetting("enableNotifications", v)}
+										checked={enableNotifications}
+										onChange={(v) => setEnableNotifications(v)}
 									/>
 								</SettingRow>
 
@@ -377,10 +425,7 @@ export default function Settings() {
 									title="Notify on Task Failure"
 									description="Get notified when a task fails"
 								>
-									<Toggle
-										checked={settings.notifyOnFailure}
-										onChange={(v) => updateSetting("notifyOnFailure", v)}
-									/>
+									<Toggle checked={notifyOnFailure} onChange={(v) => setNotifyOnFailure(v)} />
 								</SettingRow>
 
 								<SettingRow
@@ -388,10 +433,7 @@ export default function Settings() {
 									title="Notify on Task Complete"
 									description="Get notified when a task completes successfully"
 								>
-									<Toggle
-										checked={settings.notifyOnComplete}
-										onChange={(v) => updateSetting("notifyOnComplete", v)}
-									/>
+									<Toggle checked={notifyOnComplete} onChange={(v) => setNotifyOnComplete(v)} />
 								</SettingRow>
 
 								<SettingRow
@@ -399,10 +441,7 @@ export default function Settings() {
 									title="Sound Alerts"
 									description="Play sound when notifications appear"
 								>
-									<Toggle
-										checked={settings.soundEnabled}
-										onChange={(v) => updateSetting("soundEnabled", v)}
-									/>
+									<Toggle checked={soundEnabled} onChange={(v) => setSoundEnabled(v)} />
 								</SettingRow>
 							</Card.Content>
 						</Card>
@@ -421,10 +460,7 @@ export default function Settings() {
 									title="Debug Mode"
 									description="Enable verbose logging and debug features"
 								>
-									<Toggle
-										checked={settings.debugMode}
-										onChange={(v) => updateSetting("debugMode", v)}
-									/>
+									<Toggle checked={debugMode} onChange={(v) => setDebugMode(v)} />
 								</SettingRow>
 
 								<SettingRow
@@ -432,10 +468,7 @@ export default function Settings() {
 									title="Cache Enabled"
 									description="Cache API responses for better performance"
 								>
-									<Toggle
-										checked={settings.cacheEnabled}
-										onChange={(v) => updateSetting("cacheEnabled", v)}
-									/>
+									<Toggle checked={cacheEnabled} onChange={(v) => setCacheEnabled(v)} />
 								</SettingRow>
 
 								<SettingRow
@@ -445,8 +478,8 @@ export default function Settings() {
 								>
 									<TextField
 										type="number"
-										value={settings.maxRetries}
-										onChange={(v) => updateSetting("maxRetries", v)}
+										value={String(maxRetries)}
+										onChange={(v) => setMaxRetries(Number(v) || 3)}
 										className="w-20"
 									/>
 								</SettingRow>
@@ -457,8 +490,8 @@ export default function Settings() {
 									description="Minimum log level to record"
 								>
 									<select
-										value={settings.logLevel}
-										onChange={(e) => updateSetting("logLevel", e.target.value)}
+										value={logLevel}
+										onChange={(e) => setLogLevel(e.target.value as LogLevel)}
 										className="
                       rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm
                       dark:border-gray-600 dark:bg-gray-800 dark:text-white
@@ -475,11 +508,11 @@ export default function Settings() {
 								<div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
 									<h4 className="font-medium text-red-600 dark:text-red-400 mb-2">Danger Zone</h4>
 									<div className="flex flex-col gap-3 sm:flex-row">
-										<Button variant="outline">
+										<Button variant="outline" onPress={handleReset}>
 											<RefreshCw className="h-4 w-4" />
 											Reset All Settings
 										</Button>
-										<Button variant="danger">
+										<Button variant="danger" onPress={handleClearData}>
 											<Trash2 className="h-4 w-4" />
 											Clear All Data
 										</Button>
@@ -489,6 +522,17 @@ export default function Settings() {
 						</Card>
 					)}
 				</div>
+			</div>
+
+			{/* Keyboard shortcuts hint */}
+			<div className="mt-8 text-center">
+				<p className="text-sm text-gray-500 dark:text-gray-400">
+					Press{" "}
+					<kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-gray-300 bg-gray-100 px-1 font-mono text-xs dark:border-gray-600 dark:bg-gray-800">
+						?
+					</kbd>{" "}
+					to view keyboard shortcuts
+				</p>
 			</div>
 		</div>
 	);
