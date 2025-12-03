@@ -5,10 +5,14 @@
 [project]
 name = "async-task-q-monitor"
 version = "0.1.0"
-description = "Add your description here"
+description = "Real-time monitoring UI for async-task-q task queue"
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = ["fastapi[standard]>=0.122.0", "pydantic>=2.12.5"]
+dependencies = [
+    "fastapi[standard]>=0.122.0",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.9.1",   # Settings management with env vars
+]
 
 [project.urls]
 Homepage = "https://github.com/adamrefaey/async-task-q-monitor"
