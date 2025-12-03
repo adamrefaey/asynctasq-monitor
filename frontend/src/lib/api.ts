@@ -7,6 +7,10 @@ import type {
 	DashboardSummary,
 	PaginatedResponse,
 	Queue,
+	QueueActionResponse,
+	QueueClearResponse,
+	QueueFilters,
+	QueueListResponse,
 	Task,
 	TaskFilters,
 	Worker,
@@ -282,7 +286,16 @@ export const api = {
 	/**
 	 * List all queues with their statistics.
 	 */
-	getQueues: (): Promise<Queue[]> => fetchApi<Queue[]>("/queues"),
+	getQueues: (filters?: Partial<QueueFilters>): Promise<QueueListResponse> => {
+		const params = buildSearchParams({
+			status: filters?.status,
+			search: filters?.search,
+			min_depth: filters?.min_depth,
+			alert_level: filters?.alert_level,
+		});
+		const queryString = params.toString();
+		return fetchApi<QueueListResponse>(`/queues${queryString ? `?${queryString}` : ""}`);
+	},
 
 	/**
 	 * Get a single queue by name.
@@ -292,29 +305,29 @@ export const api = {
 	/**
 	 * Pause a queue (stop processing tasks).
 	 */
-	pauseQueue: async (queueName: string): Promise<void> => {
-		await fetchApi<{ status: string }>(`/queues/${queueName}/pause`, {
-			method: "POST",
-		});
+	pauseQueue: async (queueName: string, reason?: string): Promise<QueueActionResponse> => {
+		const options: RequestInit = { method: "POST" };
+		if (reason) {
+			options.body = JSON.stringify({ reason });
+		}
+		return fetchApi<QueueActionResponse>(`/queues/${queueName}/pause`, options);
 	},
 
 	/**
 	 * Resume a paused queue.
 	 */
-	resumeQueue: async (queueName: string): Promise<void> => {
-		await fetchApi<{ status: string }>(`/queues/${queueName}/resume`, {
+	resumeQueue: async (queueName: string): Promise<QueueActionResponse> =>
+		fetchApi<QueueActionResponse>(`/queues/${queueName}/resume`, {
 			method: "POST",
-		});
-	},
+		}),
 
 	/**
 	 * Clear all pending tasks from a queue.
 	 */
-	clearQueue: async (queueName: string): Promise<void> => {
-		await fetchApi<{ status: string }>(`/queues/${queueName}/clear`, {
+	clearQueue: async (queueName: string): Promise<QueueClearResponse> =>
+		fetchApi<QueueClearResponse>(`/queues/${queueName}`, {
 			method: "DELETE",
-		});
-	},
+		}),
 
 	// ============================================================================
 	// Metrics Endpoints

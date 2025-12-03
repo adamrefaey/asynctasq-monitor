@@ -14,7 +14,7 @@ import {
 	useQueryClient,
 } from "@tanstack/react-query";
 import { type ApiError, api } from "@/lib/api";
-import type { DashboardSummary, Queue, Worker } from "@/lib/types";
+import type { DashboardSummary, Queue, QueueListResponse, Worker } from "@/lib/types";
 
 // ============================================================================
 // Query Key Factory
@@ -161,7 +161,7 @@ interface UseQueuesOptions {
 	refetchInterval?: number;
 	/** Additional query options */
 	queryOptions?: Omit<
-		UseQueryOptions<Queue[], ApiError, Queue[], QueryKey>,
+		UseQueryOptions<QueueListResponse, ApiError, QueueListResponse, QueryKey>,
 		"queryKey" | "queryFn"
 	>;
 }
@@ -177,7 +177,7 @@ interface UseQueuesOptions {
 export function useQueues({ refetchInterval = 5_000, queryOptions }: UseQueuesOptions = {}) {
 	return useQuery({
 		queryKey: dashboardKeys.queues(),
-		queryFn: api.getQueues,
+		queryFn: () => api.getQueues(),
 		refetchInterval,
 		placeholderData: (previousData) => previousData,
 		...queryOptions,

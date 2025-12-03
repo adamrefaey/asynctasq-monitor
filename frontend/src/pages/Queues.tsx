@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	type Activity,
 	AlertTriangle,
@@ -17,7 +17,7 @@ import {
 import { useMemo, useState } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Badge, Button, Card, Modal, Spinner, TextField } from "@/components/ui";
-import { fetchQueues } from "@/lib/api";
+import { api } from "@/lib/api";
 import type { Queue, QueueStatus } from "@/lib/types";
 
 const statusConfig: Record<
@@ -124,11 +124,22 @@ function QueueCard({
 
 	// Generate mock throughput data for visualization
 	const throughputData = useMemo(() => {
-		const baseValue = queue.size > 0 ? Math.floor(queue.size / 10) : 5;
+		const baseValue = queue.depth > 0 ? Math.floor(queue.depth / 10) : 5;
 		return Array.from({ length: 12 }, (_, i) =>
 			Math.max(0, baseValue + Math.floor(Math.random() * 10) - 5 + i),
 		);
-	}, [queue.size]);
+	}, [queue.depth]);
+
+	// Format average processing time
+	const avgProcessingTime = useMemo(() => {
+		if (queue.avg_duration_seconds !== null) {
+			return `${queue.avg_duration_seconds.toFixed(2)}s`;
+		}
+		if (queue.avg_duration_ms !== null) {
+			return `${(queue.avg_duration_ms / 1000).toFixed(2)}s`;
+		}
+		return "N/A";
+	}, [queue.avg_duration_seconds, queue.avg_duration_ms]);
 
 	return (
 		<Card className="hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
@@ -150,7 +161,7 @@ function QueueCard({
 						<div>
 							<h3 className="font-semibold text-gray-900 dark:text-white">{queue.name}</h3>
 							<p className="text-sm text-gray-500 dark:text-gray-400">
-								{queue.workers} worker{queue.workers !== 1 ? "s" : ""} assigned
+								{queue.workers_assigned} worker{queue.workers_assigned !== 1 ? "s" : ""} assigned
 							</p>
 						</div>
 					</div>
@@ -166,7 +177,7 @@ function QueueCard({
 							<Inbox className="h-4 w-4" />
 						</div>
 						<p className="text-lg font-bold text-gray-900 dark:text-white">
-							{queue.size.toLocaleString()}
+							{queue.depth.toLocaleString()}
 						</p>
 						<p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
 					</div>
@@ -176,9 +187,9 @@ function QueueCard({
 							<CheckCircle2 className="h-4 w-4" />
 						</div>
 						<p className="text-lg font-bold text-gray-900 dark:text-white">
-							{queue.processed.toLocaleString()}
+							{queue.completed_total.toLocaleString()}
 						</p>
-						<p className="text-xs text-gray-500 dark:text-gray-400">Processed</p>
+						<p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
 					</div>
 
 					<div className="text-center rounded-lg bg-gray-50 dark:bg-gray-800/50 p-3">
@@ -186,7 +197,7 @@ function QueueCard({
 							<XCircle className="h-4 w-4" />
 						</div>
 						<p className="text-lg font-bold text-gray-900 dark:text-white">
-							{queue.failed.toLocaleString()}
+							{queue.failed_total.toLocaleString()}
 						</p>
 						<p className="text-xs text-gray-500 dark:text-gray-400">Failed</p>
 					</div>
@@ -201,9 +212,7 @@ function QueueCard({
 						<Clock className="h-4 w-4" />
 						Avg. Processing Time
 					</span>
-					<span className="font-medium text-gray-900 dark:text-white">
-						{queue.avgProcessingTime.toFixed(2)}s
-					</span>
+					<span className="font-medium text-gray-900 dark:text-white">{avgProcessingTime}</span>
 				</div>
 
 				{/* Actions */}
@@ -241,20 +250,26 @@ function QueueCard({
 function QueueStats({ queues }: { queues: Queue[] }) {
 	const stats = useMemo(() => {
 		const active = queues.filter((q) => q.status === "active").length;
-		const totalSize = queues.reduce((sum, q) => sum + q.size, 0);
-		const totalProcessed = queues.reduce((sum, q) => sum + q.processed, 0);
-		const totalFailed = queues.reduce((sum, q) => sum + q.failed, 0);
-		const totalWorkers = queues.reduce((sum, q) => sum + q.workers, 0);
-		const avgTime =
-			queues.length > 0
-				? queues.reduce((sum, q) => sum + q.avgProcessingTime, 0) / queues.length
-				: 0;
+		const totalDepth = queues.reduce((sum, q) => sum + q.depth, 0);
+		const totalCompleted = queues.reduce((sum, q) => sum + q.completed_total, 0);
+		const totalFailed = queues.reduce((sum, q) => sum + q.failed_total, 0);
+		const totalWorkers = queues.reduce((sum, q) => sum + q.workers_assigned, 0);
+
+		// Calculate average time from avg_duration_ms or avg_duration_seconds
+		const avgTimes = queues
+			.map((q) => {
+				if (q.avg_duration_seconds !== null) return q.avg_duration_seconds;
+				if (q.avg_duration_ms !== null) return q.avg_duration_ms / 1000;
+				return null;
+			})
+			.filter((t): t is number => t !== null);
+		const avgTime = avgTimes.length > 0 ? avgTimes.reduce((a, b) => a + b, 0) / avgTimes.length : 0;
 
 		return {
 			total: queues.length,
 			active,
-			totalSize,
-			totalProcessed,
+			totalDepth,
+			totalCompleted,
 			totalFailed,
 			totalWorkers,
 			avgTime,
@@ -288,7 +303,7 @@ function QueueStats({ queues }: { queues: Queue[] }) {
 						<div>
 							<p className="text-sm text-gray-500 dark:text-gray-400">Pending</p>
 							<p className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
-								{stats.totalSize.toLocaleString()}
+								{stats.totalDepth.toLocaleString()}
 							</p>
 						</div>
 					</div>
@@ -302,9 +317,9 @@ function QueueStats({ queues }: { queues: Queue[] }) {
 							<CheckCircle2 className="h-5 w-5" />
 						</div>
 						<div>
-							<p className="text-sm text-gray-500 dark:text-gray-400">Processed</p>
+							<p className="text-sm text-gray-500 dark:text-gray-400">Completed</p>
 							<p className="text-xl font-bold text-green-600 dark:text-green-400">
-								{stats.totalProcessed.toLocaleString()}
+								{stats.totalCompleted.toLocaleString()}
 							</p>
 						</div>
 					</div>
@@ -368,10 +383,12 @@ function ConfirmActionModal({
 	confirmAction,
 	onClose,
 	onConfirm,
+	isPending,
 }: {
 	confirmAction: { action: "pause" | "resume" | "clear"; queue: Queue } | null;
 	onClose: () => void;
 	onConfirm: () => void;
+	isPending: boolean;
 }) {
 	const getTitle = () => {
 		if (confirmAction?.action === "clear") return "Clear Queue";
@@ -383,7 +400,7 @@ function ConfirmActionModal({
 		if (!confirmAction) return "";
 		const { action, queue } = confirmAction;
 		if (action === "clear") {
-			return `Are you sure you want to clear all ${queue.size.toLocaleString()} pending tasks from "${queue.name}"? This action cannot be undone.`;
+			return `Are you sure you want to clear all ${queue.depth.toLocaleString()} pending tasks from "${queue.name}"? This action cannot be undone.`;
 		}
 		if (action === "pause") {
 			return `Are you sure you want to pause the queue "${queue.name}"? Workers will stop processing new tasks.`;
@@ -412,13 +429,15 @@ function ConfirmActionModal({
 				</div>
 			</Modal.Body>
 			<Modal.Footer>
-				<Button variant="ghost" onPress={onClose}>
+				<Button variant="ghost" onPress={onClose} isDisabled={isPending}>
 					Cancel
 				</Button>
 				<Button
 					variant={confirmAction?.action === "clear" ? "danger" : "primary"}
 					onPress={onConfirm}
+					isDisabled={isPending}
 				>
+					{isPending ? <Spinner size="sm" /> : null}
 					{getTitle()}
 				</Button>
 			</Modal.Footer>
@@ -434,17 +453,47 @@ export default function Queues() {
 		queue: Queue;
 	} | null>(null);
 
+	const queryClient = useQueryClient();
+
 	const {
-		data: queues = [],
+		data: queuesResponse,
 		isLoading,
 		error,
 		refetch,
 		isFetching,
 	} = useQuery({
 		queryKey: ["queues"],
-		queryFn: fetchQueues,
+		queryFn: () => api.getQueues(),
 		refetchInterval: 10000,
 	});
+
+	// Extract queues array from response
+	const queues = queuesResponse?.items ?? [];
+
+	// Mutations for queue actions
+	const pauseMutation = useMutation({
+		mutationFn: (queueName: string) => api.pauseQueue(queueName),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["queues"] });
+		},
+	});
+
+	const resumeMutation = useMutation({
+		mutationFn: (queueName: string) => api.resumeQueue(queueName),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["queues"] });
+		},
+	});
+
+	const clearMutation = useMutation({
+		mutationFn: (queueName: string) => api.clearQueue(queueName),
+		onSuccess: () => {
+			void queryClient.invalidateQueries({ queryKey: ["queues"] });
+		},
+	});
+
+	const isActionPending =
+		pauseMutation.isPending || resumeMutation.isPending || clearMutation.isPending;
 
 	const filteredQueues = useMemo(() => {
 		return queues.filter((queue) => {
@@ -461,14 +510,23 @@ export default function Queues() {
 	const executeAction = async () => {
 		if (!confirmAction) return;
 
-		// TODO: Implement API calls for pause/resume/clear
-		// When implementing, use:
-		// await api.queues.pause(confirmAction.queue.name)
-		// await api.queues.resume(confirmAction.queue.name)
-		// await api.queues.clear(confirmAction.queue.name)
+		const { action, queue } = confirmAction;
 
-		setConfirmAction(null);
-		void refetch();
+		try {
+			switch (action) {
+				case "pause":
+					await pauseMutation.mutateAsync(queue.name);
+					break;
+				case "resume":
+					await resumeMutation.mutateAsync(queue.name);
+					break;
+				case "clear":
+					await clearMutation.mutateAsync(queue.name);
+					break;
+			}
+		} finally {
+			setConfirmAction(null);
+		}
 	};
 
 	if (error) {
@@ -536,6 +594,7 @@ export default function Queues() {
 				confirmAction={confirmAction}
 				onClose={() => setConfirmAction(null)}
 				onConfirm={executeAction}
+				isPending={isActionPending}
 			/>
 		</div>
 	);

@@ -256,23 +256,103 @@ export interface QueueStats {
 }
 
 /**
+ * Queue alert level enum.
+ */
+export type QueueAlertLevel = "normal" | "warning" | "critical";
+
+/**
  * Queue with status for management UI.
+ * Matches the backend Queue Pydantic model.
  */
 export interface Queue {
 	/** Queue name */
 	name: string;
 	/** Current queue status */
 	status: QueueStatus;
-	/** Number of pending tasks */
-	size: number;
-	/** Total processed tasks */
-	processed: number;
-	/** Total failed tasks */
-	failed: number;
+	/** Number of pending tasks in queue */
+	depth: number;
+	/** Number of tasks currently being processed */
+	processing: number;
+	/** Total number of completed tasks */
+	completed_total: number;
+	/** Total number of failed tasks */
+	failed_total: number;
 	/** Number of workers assigned to this queue */
-	workers: number;
-	/** Average processing time in seconds */
-	avgProcessingTime: number;
+	workers_assigned: number;
+	/** Average task duration in milliseconds */
+	avg_duration_ms: number | null;
+	/** Tasks processed per minute */
+	throughput_per_minute: number | null;
+	/** Queue priority (higher = more important) */
+	priority: number;
+	/** Default max retries for tasks in this queue */
+	max_retries: number;
+	/** When the queue was created (ISO string) */
+	created_at: string | null;
+	/** When the queue was paused (ISO string, null if not paused) */
+	paused_at: string | null;
+	/** Computed: alert level based on queue depth */
+	alert_level: QueueAlertLevel;
+	/** Computed: total tasks (pending + processing + completed + failed) */
+	total_tasks: number;
+	/** Computed: success rate percentage (0-100) */
+	success_rate: number;
+	/** Computed: average duration in seconds */
+	avg_duration_seconds: number | null;
+	/** Computed: whether queue has no pending or processing tasks */
+	is_idle: boolean;
+}
+
+/**
+ * Queue filters for list queries.
+ */
+export interface QueueFilters {
+	/** Filter by queue status */
+	status?: QueueStatus | undefined;
+	/** Search in queue name */
+	search?: string | undefined;
+	/** Filter queues with depth >= this value */
+	min_depth?: number | undefined;
+	/** Filter by alert level */
+	alert_level?: QueueAlertLevel | undefined;
+}
+
+/**
+ * Response from queue list endpoint.
+ */
+export interface QueueListResponse {
+	/** List of queues */
+	items: Queue[];
+	/** Total number of queues */
+	total: number;
+}
+
+/**
+ * Response from queue action endpoints.
+ */
+export interface QueueActionResponse {
+	/** Whether action was successful */
+	success: boolean;
+	/** Queue name action was performed on */
+	queue_name: string;
+	/** Action that was performed */
+	action: string;
+	/** Human-readable message */
+	message: string;
+}
+
+/**
+ * Response from queue clear endpoint.
+ */
+export interface QueueClearResponse {
+	/** Whether clear was successful */
+	success: boolean;
+	/** Queue name that was cleared */
+	queue_name: string;
+	/** Number of tasks cleared */
+	tasks_cleared: number;
+	/** Human-readable message */
+	message: string;
 }
 
 /**
