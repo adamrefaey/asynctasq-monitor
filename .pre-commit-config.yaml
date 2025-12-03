@@ -9,31 +9,31 @@ default_language_version:
   python: python
 
 repos:
-  # Ruff - fast linter + formatter running from backend/ directory
+  # Ruff - fast linter + formatter for Python
   - repo: local
     hooks:
       - id: ruff
-        name: ruff (backend)
-        entry: bash -c 'cd backend && uv run ruff check --fix "${@#backend/}"' --
+        name: ruff
+        entry: uv run ruff check --fix
         language: system
         types_or: [python, pyi]
-        files: ^backend/
+        exclude: ^frontend/
       - id: ruff-format
-        name: ruff format (backend)
-        entry: bash -c 'cd backend && uv run ruff format "${@#backend/}"' --
+        name: ruff format
+        entry: uv run ruff format
         language: system
         types_or: [python, pyi]
-        files: ^backend/
+        exclude: ^frontend/
 
-  # Pyright - static type checker running from backend/ directory
+  # Pyright - static type checker
   - repo: local
     hooks:
       - id: pyright
-        name: pyright (backend)
-        entry: bash -c 'cd backend && uv run pyright'
+        name: pyright
+        entry: uv run pyright
         language: system
         types_or: [python, pyi]
-        files: ^backend/
+        exclude: ^frontend/
         pass_filenames: false
 
   # Standard hooks for whitespace, JSON/TOML/YAML checks and basic safety
@@ -64,15 +64,13 @@ repos:
         args: [--fix=lf]
         exclude: ^frontend/
 
-  # Validate pyproject.toml schema. In CI without network, consider adding
-  # 'validate-pyproject-schema-store[all]' as an additional_dependency here.
+  # Validate pyproject.toml schema
   - repo: https://github.com/abravalheri/validate-pyproject
     rev: v0.24.1
     hooks:
       - id: validate-pyproject
-        # additional_dependencies: ["validate-pyproject-schema-store[all]"]
 
-  # Secrets detection (gitleaks). Use a baseline or CI run to minimize noise.
+  # Secrets detection (gitleaks)
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.0
     hooks:

@@ -1,5 +1,16 @@
 """Async Task Q Monitor package.
 
+Web-based monitoring UI for async-task-q task queues.
+
+Usage:
+    # Run the monitor server
+    python -m async_task_q_monitor
+    async-task-q-monitor --port 8080
+
+    # Or mount in your existing FastAPI app
+    from async_task_q_monitor import create_monitoring_app
+    app = create_monitoring_app()
+
 Expose a lazy `create_monitoring_app` loader to avoid importing FastAPI
 at package import time (helps importing models in environments without
 FastAPI installed).
@@ -13,6 +24,8 @@ where FastAPI is not installed.
 
 from importlib import import_module
 from typing import TYPE_CHECKING
+
+__version__ = "0.1.0"
 
 if TYPE_CHECKING:
     # Only import for type checking to avoid a runtime dependency.
@@ -29,4 +42,4 @@ def create_monitoring_app(*args: object, **kwargs: object) -> FastAPI:
     return module.create_monitoring_app(*args, **kwargs)
 
 
-__all__ = ["create_monitoring_app"]
+__all__ = ["create_monitoring_app", "__version__"]

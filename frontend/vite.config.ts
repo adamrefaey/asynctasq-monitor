@@ -18,7 +18,10 @@ export default defineConfig({
 			"@": resolve(__dirname, "./src"),
 		},
 	},
+	// Build output goes directly into Python package static directory
 	build: {
+		outDir: resolve(__dirname, "../src/async_task_q_monitor/static"),
+		emptyOutDir: true,
 		rollupOptions: {
 			output: {
 				manualChunks: {
@@ -32,6 +35,8 @@ export default defineConfig({
 			},
 		},
 	},
+	// Use absolute paths for production builds
+	base: "/",
 	server: {
 		proxy: {
 			"/api": {
