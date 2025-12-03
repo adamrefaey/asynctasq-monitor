@@ -1,1 +1,130 @@
 @import "tailwindcss";
+@plugin "tailwindcss-react-aria-components";
+
+/* Custom theme variables */
+@layer base {
+	:root {
+		/* Tooltip colors for charts */
+		--tooltip-bg: #1f2937;
+		--tooltip-text: #f9fafb;
+
+		/* Focus ring color */
+		--focus-ring: #3b82f6;
+
+		/* Scrollbar styling */
+		--scrollbar-bg: #e5e7eb;
+		--scrollbar-thumb: #9ca3af;
+
+		/* Sidebar width */
+		--sidebar-width: 16rem;
+	}
+
+	.dark {
+		--tooltip-bg: #374151;
+		--tooltip-text: #f9fafb;
+		--scrollbar-bg: #374151;
+		--scrollbar-thumb: #6b7280;
+	}
+
+	/* Global styles */
+	html {
+		scroll-behavior: smooth;
+	}
+
+	body {
+		@apply antialiased;
+		font-feature-settings: "cv11", "cv02", "cv03", "cv04";
+	}
+
+	/* Custom scrollbar */
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+
+	::-webkit-scrollbar-track {
+		background: var(--scrollbar-bg);
+		border-radius: 4px;
+	}
+
+	::-webkit-scrollbar-thumb {
+		background: var(--scrollbar-thumb);
+		border-radius: 4px;
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		background: #6b7280;
+	}
+
+	/* Focus visible styles for accessibility */
+	*:focus-visible {
+		outline: 2px solid var(--focus-ring);
+		outline-offset: 2px;
+	}
+
+	/* Selection styles */
+	::selection {
+		@apply bg-blue-500/30;
+	}
+}
+
+/* Animation utilities */
+@layer utilities {
+	.animate-fade-in {
+		animation: fade-in 0.2s ease-out;
+	}
+
+	.animate-slide-up {
+		animation: slide-up 0.3s ease-out;
+	}
+
+	.animate-slide-down {
+		animation: slide-down 0.3s ease-out;
+	}
+
+	.animate-scale-in {
+		animation: scale-in 0.2s ease-out;
+	}
+
+	@keyframes fade-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes slide-up {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes slide-down {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes scale-in {
+		from {
+			opacity: 0;
+			transform: scale(0.95);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+}
