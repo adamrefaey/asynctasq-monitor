@@ -15,6 +15,7 @@ from fastapi import Depends, Query, Request
 
 from async_task_q_monitor.config import Settings, get_settings
 from async_task_q_monitor.services.task_service import TaskService
+from async_task_q_monitor.services.worker_service import WorkerService
 
 # ---------------------------------------------------------------------------
 # Settings Dependency
@@ -56,6 +57,32 @@ def get_task_service() -> TaskService:
 
 
 TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]
+
+
+# ---------------------------------------------------------------------------
+# Worker Service Dependency
+# ---------------------------------------------------------------------------
+
+
+@lru_cache
+def _get_worker_service_singleton() -> WorkerService:
+    """Internal singleton factory for WorkerService.
+
+    Using lru_cache for lightweight singleton pattern.
+    """
+    return WorkerService()
+
+
+def get_worker_service() -> WorkerService:
+    """Return a WorkerService for dependency injection.
+
+    For production, this uses a singleton pattern.
+    For testing, this dependency can be overridden in app.dependency_overrides.
+    """
+    return _get_worker_service_singleton()
+
+
+WorkerServiceDep = Annotated[WorkerService, Depends(get_worker_service)]
 
 
 # ---------------------------------------------------------------------------
