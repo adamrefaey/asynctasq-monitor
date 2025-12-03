@@ -80,6 +80,11 @@ export interface TaskFilters {
 export type WorkerStatus = "active" | "idle" | "offline";
 
 /**
+ * Worker action type enum.
+ */
+export type WorkerAction = "pause" | "resume" | "shutdown" | "kill";
+
+/**
  * Queue status enum.
  */
 export type QueueStatus = "active" | "paused" | "draining";
@@ -92,22 +97,142 @@ export interface Worker {
 	id: string;
 	/** Worker name (hostname or custom) */
 	name: string;
+	/** Hostname where worker is running */
+	hostname?: string | null;
+	/** Process ID */
+	pid?: number | null;
 	/** Current worker status */
 	status: WorkerStatus;
 	/** Queues this worker is processing */
 	queues: string[];
 	/** ID of task currently being processed (null if idle) */
-	currentTask: string | null;
+	current_task_id: string | null;
+	/** Name of task currently being processed (null if idle) */
+	current_task_name?: string | null;
+	/** When current task started (ISO string, null if idle) */
+	current_task_started_at?: string | null;
 	/** Total tasks processed by this worker */
-	tasksProcessed: number;
+	tasks_processed: number;
+	/** Total tasks failed by this worker */
+	tasks_failed: number;
+	/** Average task duration in milliseconds */
+	avg_task_duration_ms?: number | null;
 	/** Worker uptime in seconds */
 	uptime_seconds: number;
+	/** When worker started (ISO string) */
+	started_at: string;
 	/** Last heartbeat timestamp (ISO string) */
-	lastHeartbeat: string;
+	last_heartbeat: string;
 	/** CPU usage percentage (0-100) */
-	cpuUsage?: number;
+	cpu_usage?: number | null;
 	/** Memory usage percentage (0-100) */
-	memoryUsage?: number;
+	memory_usage?: number | null;
+	/** Memory in MB */
+	memory_mb?: number | null;
+	/** Worker version */
+	version?: string | null;
+	/** Custom tags */
+	tags?: string[];
+	/** Whether worker is paused */
+	is_paused: boolean;
+	/** Computed: is worker online (heartbeat within 2 minutes) */
+	is_online: boolean;
+	/** Computed: success rate percentage */
+	success_rate: number;
+	/** Computed: tasks per hour */
+	tasks_per_hour: number;
+	/** Computed: formatted uptime string */
+	uptime_formatted: string;
+	/** Computed: seconds since last heartbeat */
+	seconds_since_heartbeat: number;
+}
+
+/**
+ * Worker filters for list queries.
+ */
+export interface WorkerFilters {
+	/** Filter by worker status */
+	status?: WorkerStatus | undefined;
+	/** Filter by queue name */
+	queue?: string | undefined;
+	/** Search in worker name, ID, or hostname */
+	search?: string | undefined;
+	/** Filter by paused state */
+	is_paused?: boolean | undefined;
+	/** Filter by whether worker has current task */
+	has_current_task?: boolean | undefined;
+}
+
+/**
+ * Task summary for worker detail view.
+ */
+export interface WorkerTask {
+	/** Task ID */
+	id: string;
+	/** Task name */
+	name: string;
+	/** Queue name */
+	queue: string;
+	/** Task status */
+	status: string;
+	/** When task started (ISO string) */
+	started_at: string;
+	/** When task completed (ISO string, null if not completed) */
+	completed_at?: string | null;
+	/** Duration in milliseconds */
+	duration_ms?: number | null;
+}
+
+/**
+ * Extended worker information with task history.
+ */
+export interface WorkerDetail extends Worker {
+	/** Recent tasks processed by this worker */
+	recent_tasks: WorkerTask[];
+	/** Hourly throughput data */
+	hourly_throughput: Array<{ hour: string; count: number }>;
+}
+
+/**
+ * Response from worker action endpoint.
+ */
+export interface WorkerActionResponse {
+	/** Whether action was successful */
+	success: boolean;
+	/** Worker ID action was performed on */
+	worker_id: string;
+	/** Action that was performed */
+	action: WorkerAction;
+	/** Human-readable message */
+	message: string;
+}
+
+/**
+ * Worker log entry.
+ */
+export interface WorkerLog {
+	/** Log timestamp (ISO string) */
+	timestamp: string;
+	/** Log level (INFO, WARNING, ERROR, DEBUG) */
+	level: string;
+	/** Log message */
+	message: string;
+	/** Logger name */
+	logger_name?: string | null;
+}
+
+/**
+ * Response from worker logs endpoint.
+ */
+export interface WorkerLogsResponse {
+	/** Worker ID */
+	worker_id: string;
+	/** Log entries */
+	logs: WorkerLog[];
+	/** Total log count */
+	total: number;
+	/** Whether more logs are available */
+	has_more: boolean;
 }
 
 /**

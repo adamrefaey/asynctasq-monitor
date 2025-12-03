@@ -52,7 +52,9 @@ const cardStyles = tv({
 
 type CardStylesVariants = VariantProps<typeof cardStyles>;
 
-export interface CardProps extends CardStylesVariants {
+export interface CardProps
+	extends CardStylesVariants,
+		Omit<React.HTMLAttributes<HTMLDivElement>, "children"> {
 	children: React.ReactNode;
 	className?: string;
 }
@@ -85,9 +87,19 @@ export interface CardFooterProps {
 
 const { header, title, description, content, footer } = cardStyles();
 
-function CardRoot({ children, className, variant, padding }: CardProps): React.ReactNode {
+function CardRoot({
+	children,
+	className,
+	variant,
+	padding,
+	...divProps
+}: CardProps): React.ReactNode {
 	const styles = cardStyles({ variant, padding });
-	return <div className={styles.root({ className })}>{children}</div>;
+	return (
+		<div className={styles.root({ className })} {...divProps}>
+			{children}
+		</div>
+	);
 }
 
 function CardHeaderComponent({ children, className }: CardHeaderProps): React.ReactNode {

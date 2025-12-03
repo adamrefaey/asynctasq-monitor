@@ -112,7 +112,10 @@ interface UseWorkersOptions {
 export function useWorkers({ refetchInterval = 5_000, queryOptions }: UseWorkersOptions = {}) {
 	return useQuery({
 		queryKey: dashboardKeys.workers(),
-		queryFn: api.getWorkers,
+		queryFn: async () => {
+			const response = await api.getWorkers();
+			return response.items;
+		},
 		refetchInterval,
 		placeholderData: (previousData) => previousData,
 		...queryOptions,

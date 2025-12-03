@@ -8,11 +8,11 @@ export {
 	useDashboardSummary,
 	useInvalidateDashboard,
 	usePrefetchQueue,
-	usePrefetchWorker,
+	usePrefetchWorker as usePrefetchWorkerDashboard,
 	useQueue,
 	useQueues,
-	useWorker,
-	useWorkers,
+	useWorker as useWorkerDashboard,
+	useWorkers as useWorkersDashboard,
 } from "./useDashboard";
 
 // Task hooks
@@ -27,7 +27,21 @@ export {
 	useTask,
 	useTasks,
 } from "./useTasks";
-
 // Other hooks
 export { useTheme } from "./useTheme";
 export { useWebSocket } from "./useWebSocket";
+// Worker hooks
+export {
+	useInvalidateWorkers,
+	useKillWorker,
+	usePauseWorker,
+	usePrefetchWorker,
+	useResumeWorker,
+	useShutdownWorker,
+	useWorker,
+	useWorkerAction,
+	useWorkerDetail,
+	useWorkerLogs,
+	useWorkers,
+	workerKeys,
+} from "./useWorkers";

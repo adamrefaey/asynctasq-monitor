@@ -10,6 +10,11 @@ import type {
 	Task,
 	TaskFilters,
 	Worker,
+	WorkerAction,
+	WorkerActionResponse,
+	WorkerDetail,
+	WorkerFilters,
+	WorkerLogsResponse,
 } from "./types";
 
 /** Base URL for API endpoints */
@@ -174,7 +179,19 @@ export const api = {
 	/**
 	 * List all workers with their current status.
 	 */
-	getWorkers: (): Promise<Worker[]> => fetchApi<Worker[]>("/workers"),
+	getWorkers: (filters?: Partial<WorkerFilters>): Promise<{ items: Worker[]; total: number }> => {
+		const params = buildSearchParams({
+			status: filters?.status,
+			queue: filters?.queue,
+			search: filters?.search,
+			is_paused: filters?.is_paused,
+			has_current_task: filters?.has_current_task,
+		});
+		const queryString = params.toString();
+		return fetchApi<{ items: Worker[]; total: number }>(
+			`/workers${queryString ? `?${queryString}` : ""}`,
+		);
+	},
 
 	/**
 	 * Get a single worker by ID.
@@ -182,21 +199,80 @@ export const api = {
 	getWorkerById: (workerId: string): Promise<Worker> => fetchApi<Worker>(`/workers/${workerId}`),
 
 	/**
+	 * Get detailed worker information including task history.
+	 */
+	getWorkerDetail: (workerId: string): Promise<WorkerDetail> =>
+		fetchApi<WorkerDetail>(`/workers/${workerId}/detail`),
+
+	/**
+	 * Perform an action on a worker.
+	 */
+	performWorkerAction: (
+		workerId: string,
+		action: WorkerAction,
+		force = false,
+	): Promise<WorkerActionResponse> =>
+		fetchApi<WorkerActionResponse>(`/workers/${workerId}/action`, {
+			method: "POST",
+			body: JSON.stringify({ action, force }),
+		}),
+
+	/**
 	 * Pause a worker (stop accepting new tasks).
 	 */
-	pauseWorker: async (workerId: string): Promise<void> => {
-		await fetchApi<{ status: string }>(`/workers/${workerId}/pause`, {
+	pauseWorker: async (workerId: string): Promise<WorkerActionResponse> =>
+		fetchApi<WorkerActionResponse>(`/workers/${workerId}/pause`, {
+			method: "POST",
+		}),
+
+	/**
+	 * Resume a paused worker.
+	 */
+	resumeWorker: async (workerId: string): Promise<WorkerActionResponse> =>
+		fetchApi<WorkerActionResponse>(`/workers/${workerId}/resume`, {
+			method: "POST",
+		}),
+
+	/**
+	 * Request graceful shutdown of a worker.
+	 */
+	shutdownWorker: async (workerId: string): Promise<WorkerActionResponse> =>
+		fetchApi<WorkerActionResponse>(`/workers/${workerId}/shutdown`, {
+			method: "POST",
+		}),
+
+	/**
+	 * Immediately kill a worker.
+	 */
+	killWorker: async (workerId: string, force = false): Promise<WorkerActionResponse> => {
+		const params = buildSearchParams({ force });
+		return fetchApi<WorkerActionResponse>(`/workers/${workerId}/kill?${params.toString()}`, {
 			method: "POST",
 		});
 	},
 
 	/**
-	 * Resume a paused worker.
+	 * Get logs from a worker.
 	 */
-	resumeWorker: async (workerId: string): Promise<void> => {
-		await fetchApi<{ status: string }>(`/workers/${workerId}/resume`, {
-			method: "POST",
+	getWorkerLogs: (
+		workerId: string,
+		options?: {
+			level?: string;
+			search?: string;
+			limit?: number;
+			offset?: number;
+		},
+	): Promise<WorkerLogsResponse> => {
+		const params = buildSearchParams({
+			level: options?.level,
+			search: options?.search,
+			limit: options?.limit,
+			offset: options?.offset,
 		});
+		const queryString = params.toString();
+		return fetchApi<WorkerLogsResponse>(
+			`/workers/${workerId}/logs${queryString ? `?${queryString}` : ""}`,
+		);
 	},
 
 	// ============================================================================
@@ -311,6 +387,27 @@ export const fetchWorkers = api.getWorkers;
 
 /** Fetch a single worker */
 export const fetchWorkerById = api.getWorkerById;
+
+/** Fetch worker details with task history */
+export const fetchWorkerDetail = api.getWorkerDetail;
+
+/** Perform worker action */
+export const performWorkerAction = api.performWorkerAction;
+
+/** Pause a worker */
+export const pauseWorker = api.pauseWorker;
+
+/** Resume a worker */
+export const resumeWorker = api.resumeWorker;
+
+/** Shutdown a worker */
+export const shutdownWorker = api.shutdownWorker;
+
+/** Kill a worker */
+export const killWorker = api.killWorker;
+
+/** Fetch worker logs */
+export const fetchWorkerLogs = api.getWorkerLogs;
 
 /** Fetch all queues with stats */
 export const fetchQueues = api.getQueues;
