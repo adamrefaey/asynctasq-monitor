@@ -195,6 +195,23 @@ test-profile:
     uv run pytest --durations=10
 
 # =============================================================================
+# Docker Services (for integration tests)
+# =============================================================================
+
+# Start Docker services for testing
+docker-up:
+    docker-compose -f tests/infrastructure/docker-compose.yml up -d
+    @echo "✅ Docker services started"
+
+# Stop Docker services
+docker-down:
+    docker-compose -f tests/infrastructure/docker-compose.yml down
+
+# Restart Docker services
+docker-restart:
+    docker-compose -f tests/infrastructure/docker-compose.yml restart
+
+# =============================================================================
 # CI/CD
 # =============================================================================
 
