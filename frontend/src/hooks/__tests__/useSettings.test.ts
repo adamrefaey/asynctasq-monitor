@@ -447,7 +447,7 @@ describe("useSettings", () => {
 			});
 
 			// Verify localStorage.removeItem was called
-			expect(localStorageMock.removeItem).toHaveBeenCalledWith("async-task-q-monitor-settings");
+			expect(localStorageMock.removeItem).toHaveBeenCalledWith("asynctasq-monitor-settings");
 
 			// Verify defaults restored
 			expect(result.current.theme).toBe("system");
