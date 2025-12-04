@@ -93,10 +93,10 @@ Options:
 
 ### Prerequisites
 
-- Python 3.11+
-- Node.js 20+ (for frontend development)
-- pnpm (for frontend package management)
+- Python 3.14+
+- Node.js 24+ (for frontend development)
 - uv (for Python package management)
+- pnpm (for frontend package management)
 
 ### Setup
 
