@@ -2,6 +2,10 @@
 
 Web-based monitoring UI for [async-task-q](https://github.com/adamrefaey/async-task-q) task queues.
 
+## Requirements
+
+- **Redis Server**: A running Redis server is **required** for the monitor to function. The monitor uses Redis Pub/Sub to receive real-time events from task workers.
+
 ## Features
 
 - 📊 **Real-time Dashboard** - Live task, worker, and queue metrics
@@ -17,11 +21,32 @@ Web-based monitoring UI for [async-task-q](https://github.com/adamrefaey/async-t
 # Install as standalone package
 pip install async-task-q-monitor
 
-# Or install with the core package
+# Or install with the core package (recommended)
 pip install async-task-q[monitor]
 ```
 
+> **Note**: Both installation methods include the `redis[hiredis]` package required for Redis Pub/Sub communication.
+
 ## Quick Start
+
+### Prerequisites
+
+1. **Redis Server**: Ensure Redis is running and accessible (default: `redis://localhost:6379`)
+
+### Configure Your Workers
+
+Configure your task workers to use Redis as the driver or ensure `redis_url` is set for event emission:
+
+```python
+from async_task_q import set_global_config
+
+# Option 1: Use Redis as queue driver (events enabled automatically)
+set_global_config(driver="redis", redis_url="redis://localhost:6379")
+
+# Option 2: Use another driver but still emit events to Redis
+# Events will use the redis_url from config for Pub/Sub
+set_global_config(driver="postgres", redis_url="redis://localhost:6379")
+```
 
 ### Run the Monitor Server
 
