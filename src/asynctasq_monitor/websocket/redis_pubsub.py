@@ -136,7 +136,7 @@ class RedisPubSubBroker:
         if self._pubsub:
             try:
                 await self._pubsub.unsubscribe()
-                await self._pubsub.close()
+                await self._pubsub.aclose()
             except Exception:
                 logger.debug("Error closing pubsub", exc_info=True)
             self._pubsub = None
@@ -144,7 +144,7 @@ class RedisPubSubBroker:
         # Close Redis connection
         if self._redis:
             try:
-                await self._redis.close()
+                await self._redis.aclose()
             except Exception:
                 logger.debug("Error closing Redis connection", exc_info=True)
             self._redis = None
