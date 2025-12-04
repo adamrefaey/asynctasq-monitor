@@ -5,6 +5,7 @@
 
 import type {
 	DashboardSummary,
+	MetricsSummary,
 	PaginatedResponse,
 	Queue,
 	QueueActionResponse,
@@ -332,6 +333,13 @@ export const api = {
 	// ============================================================================
 	// Metrics Endpoints
 	// ============================================================================
+
+	/**
+	 * Get metrics summary with all chart data for a time range.
+	 * @param timeRange - Time range like "1h", "6h", "24h", "7d", "30d"
+	 */
+	getMetricsSummary: (timeRange: string): Promise<MetricsSummary> =>
+		fetchApi<MetricsSummary>(`/metrics/summary?time_range=${encodeURIComponent(timeRange)}`),
 
 	/**
 	 * Get throughput metrics over time.

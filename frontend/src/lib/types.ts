@@ -10,6 +10,73 @@
 export type TaskStatus = "pending" | "running" | "completed" | "failed" | "retrying" | "cancelled";
 
 /**
+ * Time-series data point for throughput charts.
+ */
+export interface ThroughputDataPoint {
+	/** ISO timestamp for the data point */
+	timestamp: string;
+	/** Number of completed tasks in this interval */
+	completed: number;
+	/** Number of failed tasks in this interval */
+	failed: number;
+	/** Computed success rate percentage (0-100) */
+	successRate?: number;
+}
+
+/**
+ * Duration percentile statistics.
+ */
+export interface DurationStats {
+	/** Average duration in milliseconds */
+	avg_ms: number;
+	/** 50th percentile (median) duration in milliseconds */
+	p50_ms: number;
+	/** 95th percentile duration in milliseconds */
+	p95_ms: number;
+	/** 99th percentile duration in milliseconds */
+	p99_ms: number;
+}
+
+/**
+ * Task status breakdown counts.
+ */
+export interface StatusBreakdown {
+	/** Number of pending tasks */
+	pending: number;
+	/** Number of running tasks */
+	running: number;
+	/** Number of completed tasks */
+	completed: number;
+	/** Number of failed tasks */
+	failed: number;
+}
+
+/**
+ * Queue depth data point for time-series charts.
+ * Keys are queue names, values are depth counts.
+ */
+export type QueueDepthDataPoint = Record<string, number | string>;
+
+/**
+ * Metrics summary response from the API.
+ * Contains all data needed for the Metrics dashboard charts.
+ */
+export interface MetricsSummary {
+	/** Time range for the metrics (e.g., "1h", "24h", "7d") */
+	time_range: string;
+	/** Throughput data points over time */
+	throughput: ThroughputDataPoint[];
+	/** Duration percentile statistics */
+	duration: DurationStats;
+	/** Current status breakdown counts */
+	status_breakdown: StatusBreakdown;
+	/** Queue depth data points over time */
+	queue_depth?: QueueDepthDataPoint[];
+	/** List of queue names for chart legends */
+	queues?: string[];
+}
+
+/**
  * Complete task representation for monitoring.
  * All fields match the backend Task Pydantic model.
  */

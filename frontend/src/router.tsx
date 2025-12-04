@@ -13,6 +13,7 @@ const DashboardPage = lazy(() => import("@/pages/Dashboard"));
 const TasksPage = lazy(() => import("@/pages/Tasks"));
 const WorkersPage = lazy(() => import("@/pages/Workers"));
 const QueuesPage = lazy(() => import("@/pages/Queues"));
+const MetricsPage = lazy(() => import("@/pages/Metrics"));
 const SettingsPage = lazy(() => import("@/pages/Settings"));
 
 /**
@@ -77,6 +78,14 @@ export const router = createBrowserRouter([
 				element: (
 					<PageLoader>
 						<QueuesPage />
+					</PageLoader>
+				),
+			},
+			{
+				path: "metrics",
+				element: (
+					<PageLoader>
+						<MetricsPage />
 					</PageLoader>
 				),
 			},

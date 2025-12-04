@@ -1,4 +1,5 @@
 export { default as Dashboard } from "./Dashboard";
+export { default as Metrics } from "./Metrics";
 export { default as Queues } from "./Queues";
 export { default as Settings } from "./Settings";
 export { default as Tasks } from "./Tasks";
