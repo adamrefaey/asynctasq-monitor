@@ -19,9 +19,15 @@ Web-based monitoring UI for [asynctasq](https://github.com/adamrefaey/asynctasq)
 
 ```bash
 # Install as standalone package
+## using uv
+uv add asynctasq-monitor
+## using pip
 pip install asynctasq-monitor
 
-# Or install with the core package (recommended)
+# Or install with the core package
+## using uv
+uv add asynctasq[monitor]
+## using pip
 pip install asynctasq[monitor]
 ```
 
@@ -93,7 +99,7 @@ Options:
 
 ### Prerequisites
 
-- Python 3.14+
+- Python 3.14+ (for backend development)
 - Node.js 24+ (for frontend development)
 - uv (for Python package management)
 - pnpm (for frontend package management)
