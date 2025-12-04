@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from async_task_q_monitor.services.event_consumer import get_event_consumer
 from async_task_q_monitor.services.metrics_collector import MetricsCollector
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     except ImportError:
         logger.debug("MetricsCollector not available; continuing without it")
 
+    # Initialize event consumer for real-time updates via Redis Pub/Sub
+    try:
+        consumer = get_event_consumer()
+        await consumer.start()
+        app.state.event_consumer = consumer
+        logger.info("EventConsumer started for real-time updates")
+    except Exception as e:
+        logger.warning("EventConsumer not available (Redis may not be configured): %s", e)
+        app.state.event_consumer = None
+
     yield
+
+    # Shutdown event consumer
+    consumer = getattr(app.state, "event_consumer", None)
+    if consumer is not None:
+        try:
+            await consumer.stop()
+        except Exception as exc:  # pragma: no cover - best-effort shutdown  # noqa: BLE001
+            logger.debug("Error shutting down event consumer: %s", exc)
 
     collector = getattr(app.state, "metrics_collector", None)
     if collector is not None:
