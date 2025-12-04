@@ -160,9 +160,15 @@ test-backend:
 
 # Run frontend tests (when available)
 test-frontend:
-    @echo "⚠️  Frontend tests not yet configured"
-    @echo "Add test framework (Vitest) and update this command"
+    cd frontend && pnpm test
 
+# Run frontend tests in watch mode
+test-frontend-watch:
+    cd frontend && pnpm test:watch
+
+# Run frontend tests with coverage
+test-frontend-coverage:
+    cd frontend && pnpm test:coverage
 # Run unit tests only
 test-unit:
     uv run pytest -m unit
