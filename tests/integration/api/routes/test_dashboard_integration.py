@@ -504,13 +504,14 @@ class TestDashboardEdgeCases:
         """Test multiple concurrent requests don't cause issues."""
         import concurrent.futures
 
-        def make_request():
-            with TestClient(app) as client:
+        with TestClient(app) as client:
+
+            def make_request():
                 return client.get("/api/dashboard/summary")
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(make_request) for _ in range(10)]
-            results = [f.result() for f in futures]
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                futures = [executor.submit(make_request) for _ in range(10)]
+                results = [f.result(timeout=5) for f in futures]
 
         # All requests should succeed
         for response in results:
