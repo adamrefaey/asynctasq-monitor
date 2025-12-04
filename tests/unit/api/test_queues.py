@@ -424,3 +424,7 @@ class TestQueueComputedFields:
             assert data["is_idle"] is True
         else:
             assert data["is_idle"] is False
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-s", "-m", "unit"])

@@ -301,3 +301,7 @@ class TestConnectionManagerConcurrency:
         # Each client should have received all 10 messages
         for ws in websockets:
             assert len(ws.sent_messages) == 10
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-s", "-m", "unit"])

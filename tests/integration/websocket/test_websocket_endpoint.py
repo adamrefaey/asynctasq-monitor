@@ -179,3 +179,7 @@ class TestWebSocketDisconnection:
         # Note: TestClient context manager handles disconnect
         # Give a moment for cleanup
         assert manager.active_connections_count == 0
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-s", "-m", "integration"])

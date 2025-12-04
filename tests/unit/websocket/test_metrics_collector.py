@@ -247,3 +247,7 @@ class TestMetricsCollectorPolling:
 
         # Should continue polling despite error
         assert call_count >= 2
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-s", "-m", "unit"])

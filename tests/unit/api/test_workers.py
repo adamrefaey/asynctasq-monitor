@@ -448,3 +448,7 @@ class TestHeartbeat:
         )
         # Pydantic validation should fail
         assert response.status_code == 422
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-s", "-m", "unit"])

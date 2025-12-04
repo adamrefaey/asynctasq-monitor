@@ -332,3 +332,7 @@ class TestEventBroadcasterSingleton:
 
         # Cleanup
         set_event_broadcaster(None)
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-s", "-m", "unit"])

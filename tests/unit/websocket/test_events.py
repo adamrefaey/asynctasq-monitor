@@ -258,3 +258,7 @@ class TestMetricsEvent:
         assert "running" in example
         assert "completed" in example
         assert "failed" in example
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-s", "-m", "unit"])
