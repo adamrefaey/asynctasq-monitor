@@ -1,4 +1,4 @@
-# Async Task Q Monitor - Unified Justfile
+# Async TasQ Monitor - Unified Justfile
 # Commands for both backend (Python) and frontend (TypeScript/React)
 
 # Default recipe to display help
@@ -44,7 +44,7 @@ dev:
 
 # Run backend server in development mode
 dev-backend:
-    uv run python -m async_task_q_monitor --reload --log-level debug
+    uv run python -m asynctasq_monitor --reload --log-level debug
 
 # Run frontend dev server with hot reload
 dev-frontend:
@@ -61,7 +61,7 @@ build: build-frontend build-python
 # Build frontend into Python package static directory
 build-frontend:
     cd frontend && pnpm build
-    @echo "✅ Frontend built to src/async_task_q_monitor/static/"
+    @echo "✅ Frontend built to src/asynctasq_monitor/static/"
 
 # Build Python package (wheel and sdist)
 build-python:
@@ -79,9 +79,9 @@ clean: clean-python clean-frontend
 # Clean Python build artifacts
 clean-python:
     rm -rf dist/
-    rm -rf src/async_task_q_monitor/static/assets/
-    rm -f src/async_task_q_monitor/static/index.html
-    rm -f src/async_task_q_monitor/static/vite.svg
+    rm -rf src/asynctasq_monitor/static/assets/
+    rm -f src/asynctasq_monitor/static/index.html
+    rm -f src/asynctasq_monitor/static/vite.svg
     find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
     find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
     find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
@@ -179,7 +179,7 @@ test-integration:
 
 # Run backend tests with coverage report
 test-cov:
-    uv run pytest --cov=async_task_q_monitor --cov-branch --cov-report=term-missing --cov-report=html
+    uv run pytest --cov=asynctasq_monitor --cov-branch --cov-report=term-missing --cov-report=html
 
 # Run frontend tests with coverage (when available)
 test-cov-frontend:
@@ -216,7 +216,7 @@ pre-commit-update:
 
 # Run security checks with bandit
 security:
-    uv run bandit -r src/async_task_q_monitor -ll
+    uv run bandit -r src/asynctasq_monitor -ll
 
 # Run dependency security audit (Python + Frontend)
 audit: audit-python audit-frontend
@@ -266,7 +266,7 @@ tag TAG:
 
 # Show project info
 info:
-    @echo "Project: async-task-q-monitor"
+    @echo "Project: asynctasq-monitor"
     @echo "Python: $(uv run python --version)"
     @echo "UV: $(uv --version)"
     @echo "Node: $(node --version)"

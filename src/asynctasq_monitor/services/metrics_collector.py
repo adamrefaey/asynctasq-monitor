@@ -20,7 +20,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from async_task_q_monitor.websocket.manager import ConnectionManager
+    from asynctasq_monitor.websocket.manager import ConnectionManager
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ class MetricsCollector:
         # Lazily import connection manager if not provided
         if self._manager is None:
             try:
-                from async_task_q_monitor.websocket.manager import get_connection_manager
+                from asynctasq_monitor.websocket.manager import get_connection_manager
 
                 self._manager = get_connection_manager()
             except ImportError:
@@ -151,7 +151,7 @@ class MetricsCollector:
         """
         try:
             # Try to get the driver from the dispatcher
-            from async_task_q.core.dispatcher import get_dispatcher
+            from asynctasq.core.dispatcher import get_dispatcher
 
             dispatcher = get_dispatcher()
             if dispatcher is None or not hasattr(dispatcher, "driver"):
@@ -200,7 +200,7 @@ class MetricsCollector:
             return metrics
 
         except ImportError:
-            logger.debug("async_task_q not available, returning stub metrics")
+            logger.debug("asynctasq not available, returning stub metrics")
             return self._get_stub_metrics()
 
         except Exception:
@@ -230,7 +230,7 @@ class MetricsCollector:
             return
 
         # Import event type here to avoid circular imports
-        from async_task_q_monitor.websocket.events import (
+        from asynctasq_monitor.websocket.events import (
             MetricsEvent,
             QueueEvent,
             WebSocketEventType,

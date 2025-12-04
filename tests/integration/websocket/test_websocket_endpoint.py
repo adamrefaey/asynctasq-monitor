@@ -11,8 +11,8 @@ from httpx import ASGITransport, AsyncClient
 import pytest
 from starlette.testclient import TestClient
 
-from async_task_q_monitor.api.main import create_monitoring_app
-from async_task_q_monitor.websocket.manager import (
+from asynctasq_monitor.api.main import create_monitoring_app
+from asynctasq_monitor.websocket.manager import (
     ConnectionManager,
     get_connection_manager,
     set_connection_manager,

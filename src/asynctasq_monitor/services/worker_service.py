@@ -14,7 +14,7 @@ provides a mock implementation for development and testing.
 
 from datetime import UTC, datetime, timedelta
 
-from async_task_q_monitor.models.worker import (
+from asynctasq_monitor.models.worker import (
     HeartbeatRequest,
     HeartbeatResponse,
     Worker,
@@ -422,7 +422,7 @@ class WorkerService:
                 timestamp=now - timedelta(seconds=i * 30),
                 level=levels[i % len(levels)],
                 message=messages[i % len(messages)],
-                logger_name="async_task_q.worker",
+                logger_name="asynctasq.worker",
             )
             for i in range(50)
         ]

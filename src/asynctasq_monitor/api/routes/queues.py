@@ -10,8 +10,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 
-from async_task_q_monitor.api.dependencies import QueueServiceDep
-from async_task_q_monitor.models.queue import (
+from asynctasq_monitor.api.dependencies import QueueServiceDep
+from asynctasq_monitor.models.queue import (
     Queue,
     QueueActionRequest,
     QueueActionResponse,

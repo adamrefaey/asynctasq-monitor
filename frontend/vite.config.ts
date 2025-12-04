@@ -20,7 +20,7 @@ export default defineConfig({
 	},
 	// Build output goes directly into Python package static directory
 	build: {
-		outDir: resolve(__dirname, "../src/async_task_q_monitor/static"),
+		outDir: resolve(__dirname, "../src/asynctasq_monitor/static"),
 		emptyOutDir: true,
 		rollupOptions: {
 			output: {

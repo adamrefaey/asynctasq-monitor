@@ -14,7 +14,7 @@ from fastapi import WebSocket
 from fastapi.websockets import WebSocketState
 import pytest
 
-from async_task_q_monitor.websocket.manager import (
+from asynctasq_monitor.websocket.manager import (
     ConnectionManager,
     get_connection_manager,
     set_connection_manager,
@@ -216,7 +216,7 @@ class TestConnectionManager:
     @pytest.mark.asyncio
     async def test_pydantic_model_serialization(self, manager: ConnectionManager) -> None:
         """Test broadcasting Pydantic models serializes correctly."""
-        from async_task_q_monitor.websocket.events import (
+        from asynctasq_monitor.websocket.events import (
             MetricsEvent,
             WebSocketEventType,
         )

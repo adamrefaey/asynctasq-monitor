@@ -1,4 +1,4 @@
-"""API package for the async_task_q_monitor FastAPI app.
+"""API package for the asynctasq_monitor FastAPI app.
 
 This module re-exports commonly used submodules to simplify imports.
 """

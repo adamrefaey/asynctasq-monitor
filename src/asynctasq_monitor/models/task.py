@@ -1,4 +1,4 @@
-"""Pydantic models used by the async_task_q_monitor API.
+"""Pydantic models used by the asynctasq_monitor API.
 
 This module defines data models following Pydantic v2 best practices:
 - Use ConfigDict for model configuration (not class-based Config)
@@ -14,7 +14,7 @@ from typing import Annotated, Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
 
-from async_task_q.core.models import TaskInfo
+from asynctasq.core.models import TaskInfo
 
 
 class TaskStatus(str, Enum):

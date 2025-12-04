@@ -1,4 +1,4 @@
-"""Models package for async_task_q_monitor.
+"""Models package for asynctasq_monitor.
 
 This module re-exports the primary Pydantic models used by the API.
 All models follow Pydantic v2 best practices.

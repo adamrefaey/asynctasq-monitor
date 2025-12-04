@@ -7,7 +7,7 @@ This module provides centralized configuration management with:
 - Clear documentation for each setting
 
 Usage:
-    from async_task_q_monitor.config import get_settings
+    from asynctasq_monitor.config import get_settings
 
     settings = get_settings()
     print(settings.cors_origins)

@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from async_task_q_monitor.models.task import TaskFilters, TaskStatus
+from asynctasq_monitor.models.task import TaskFilters, TaskStatus
 
 
 @pytest.mark.unit

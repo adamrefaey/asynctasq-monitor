@@ -18,14 +18,14 @@ import pytest
 import pytest_asyncio
 from starlette.testclient import TestClient
 
-from async_task_q_monitor.api.dependencies import (
+from asynctasq_monitor.api.dependencies import (
     get_queue_service,
     get_task_service,
     get_worker_service,
 )
-from async_task_q_monitor.api.main import create_monitoring_app
-from async_task_q_monitor.config import Settings, get_settings
-from async_task_q_monitor.models.queue import (
+from asynctasq_monitor.api.main import create_monitoring_app
+from asynctasq_monitor.config import Settings, get_settings
+from asynctasq_monitor.models.queue import (
     Queue,
     QueueActionResponse,
     QueueClearResponse,
@@ -34,8 +34,8 @@ from async_task_q_monitor.models.queue import (
     QueueMetrics,
     QueueStatus,
 )
-from async_task_q_monitor.models.task import Task, TaskFilters, TaskStatus
-from async_task_q_monitor.models.worker import (
+from asynctasq_monitor.models.task import Task, TaskFilters, TaskStatus
+from asynctasq_monitor.models.worker import (
     HeartbeatRequest,
     HeartbeatResponse,
     Worker,
@@ -297,7 +297,7 @@ class MockWorkerService:
                 timestamp=now - timedelta(seconds=i * 30),
                 level=["INFO", "DEBUG", "WARNING", "ERROR"][i % 4],
                 message=f"Log message {i}",
-                logger_name="async_task_q.worker",
+                logger_name="asynctasq.worker",
             )
             for i in range(20)
         ]

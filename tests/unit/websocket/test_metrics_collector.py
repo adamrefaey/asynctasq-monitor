@@ -13,10 +13,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from async_task_q_monitor.services.metrics_collector import MetricsCollector
+from asynctasq_monitor.services.metrics_collector import MetricsCollector
 
 if TYPE_CHECKING:
-    from async_task_q_monitor.websocket.manager import ConnectionManager
+    from asynctasq_monitor.websocket.manager import ConnectionManager
 
 
 class MockConnectionManager:
@@ -121,7 +121,7 @@ class TestMetricsCollectorCollection:
         mock_dispatcher_module = MagicMock()
         mock_dispatcher_module.get_dispatcher.return_value = None
 
-        with patch.dict("sys.modules", {"async_task_q.core.dispatcher": mock_dispatcher_module}):
+        with patch.dict("sys.modules", {"asynctasq.core.dispatcher": mock_dispatcher_module}):
             metrics = await collector._collect_metrics()
 
             # Should return None when dispatcher is None

@@ -1,8 +1,8 @@
 """Service layer that wraps the core dispatcher for the monitoring API."""
 
-from async_task_q.core.dispatcher import get_dispatcher
-from async_task_q.drivers.base_driver import BaseDriver
-from async_task_q_monitor.models.task import Task, TaskFilters
+from asynctasq.core.dispatcher import get_dispatcher
+from asynctasq.drivers.base_driver import BaseDriver
+from asynctasq_monitor.models.task import Task, TaskFilters
 
 
 class TaskService:

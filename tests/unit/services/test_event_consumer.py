@@ -14,12 +14,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import msgpack
 import pytest
 
-from async_task_q_monitor.services.event_consumer import (
+from asynctasq_monitor.services.event_consumer import (
     EventConsumer,
     get_event_consumer,
     reset_event_consumer,
 )
-from async_task_q_monitor.websocket.broadcaster import EventBroadcaster
+from asynctasq_monitor.websocket.broadcaster import EventBroadcaster
 
 
 class MockPubSub:
@@ -181,7 +181,7 @@ class TestEventConsumerInit:
         """Test initialization with default values."""
         consumer = EventConsumer()
         assert consumer.redis_url == "redis://localhost:6379"
-        assert consumer.channel == "async_task_q:events"
+        assert consumer.channel == "asynctasq:events"
         assert consumer._client is None
         assert consumer._pubsub is None
         assert consumer._task is None
@@ -243,7 +243,7 @@ class TestEventConsumerStartStop:
         self, consumer: EventConsumer, mock_redis: MockRedisClient
     ) -> None:
         """Test start connects to Redis and subscribes to channel."""
-        with patch("async_task_q_monitor.services.event_consumer.Redis") as mock_redis_cls:
+        with patch("asynctasq_monitor.services.event_consumer.Redis") as mock_redis_cls:
             mock_redis_cls.from_url.return_value = mock_redis
 
             await consumer.start()
@@ -262,7 +262,7 @@ class TestEventConsumerStartStop:
         self, consumer: EventConsumer, mock_redis: MockRedisClient
     ) -> None:
         """Test start logs warning when already running."""
-        with patch("async_task_q_monitor.services.event_consumer.Redis") as mock_redis_cls:
+        with patch("asynctasq_monitor.services.event_consumer.Redis") as mock_redis_cls:
             mock_redis_cls.from_url.return_value = mock_redis
 
             await consumer.start()
@@ -276,7 +276,7 @@ class TestEventConsumerStartStop:
     @pytest.mark.asyncio
     async def test_start_handles_connection_failure(self, consumer: EventConsumer) -> None:
         """Test start raises exception on connection failure."""
-        with patch("async_task_q_monitor.services.event_consumer.Redis") as mock_redis_cls:
+        with patch("asynctasq_monitor.services.event_consumer.Redis") as mock_redis_cls:
             mock_client = AsyncMock()
             mock_client.ping.side_effect = ConnectionError("Connection refused")
             mock_redis_cls.from_url.return_value = mock_client
@@ -291,7 +291,7 @@ class TestEventConsumerStartStop:
         self, consumer: EventConsumer, mock_redis: MockRedisClient
     ) -> None:
         """Test stop properly cleans up resources."""
-        with patch("async_task_q_monitor.services.event_consumer.Redis") as mock_redis_cls:
+        with patch("asynctasq_monitor.services.event_consumer.Redis") as mock_redis_cls:
             mock_redis_cls.from_url.return_value = mock_redis
 
             await consumer.start()
@@ -523,7 +523,7 @@ class TestEventConsumerHandleMessage:
         }
         data = pack_event(event)
 
-        with patch("async_task_q_monitor.services.event_consumer.logger") as mock_logger:
+        with patch("asynctasq_monitor.services.event_consumer.logger") as mock_logger:
             await consumer._handle_message(data, as_broadcaster(mock_broadcaster))
 
             mock_logger.warning.assert_called_once()
@@ -538,7 +538,7 @@ class TestEventConsumerHandleMessage:
         """Test handling invalid msgpack data logs exception."""
         invalid_data = b"not valid msgpack"
 
-        with patch("async_task_q_monitor.services.event_consumer.logger") as mock_logger:
+        with patch("asynctasq_monitor.services.event_consumer.logger") as mock_logger:
             await consumer._handle_message(invalid_data, as_broadcaster(mock_broadcaster))
 
             mock_logger.exception.assert_called_once()
@@ -556,7 +556,7 @@ class TestEventConsumerHandleMessage:
         }
         data = pack_event(event)
 
-        with patch("async_task_q_monitor.services.event_consumer.logger") as mock_logger:
+        with patch("asynctasq_monitor.services.event_consumer.logger") as mock_logger:
             await consumer._handle_message(data, as_broadcaster(mock_broadcaster))
 
             mock_logger.exception.assert_called_once()
@@ -606,9 +606,9 @@ class TestEventConsumerConsumeLoop:
         mock_redis._pubsub._max_get_message_calls = 5  # Limit iterations
 
         with (
-            patch("async_task_q_monitor.services.event_consumer.Redis") as mock_redis_cls,
+            patch("asynctasq_monitor.services.event_consumer.Redis") as mock_redis_cls,
             patch(
-                "async_task_q_monitor.services.event_consumer.get_event_broadcaster"
+                "asynctasq_monitor.services.event_consumer.get_event_broadcaster"
             ) as mock_get_broadcaster,
         ):
             mock_redis_cls.from_url.return_value = mock_redis
@@ -641,9 +641,9 @@ class TestEventConsumerConsumeLoop:
         mock_redis._pubsub._max_get_message_calls = 5
 
         with (
-            patch("async_task_q_monitor.services.event_consumer.Redis") as mock_redis_cls,
+            patch("asynctasq_monitor.services.event_consumer.Redis") as mock_redis_cls,
             patch(
-                "async_task_q_monitor.services.event_consumer.get_event_broadcaster"
+                "asynctasq_monitor.services.event_consumer.get_event_broadcaster"
             ) as mock_get_broadcaster,
         ):
             mock_redis_cls.from_url.return_value = mock_redis
@@ -671,7 +671,7 @@ class TestEventConsumerConsumeLoop:
         mock_redis._pubsub.add_message(b"invalid msgpack data")
         mock_redis._pubsub._max_get_message_calls = 5
 
-        with patch("async_task_q_monitor.services.event_consumer.Redis") as mock_redis_cls:
+        with patch("asynctasq_monitor.services.event_consumer.Redis") as mock_redis_cls:
             mock_redis_cls.from_url.return_value = mock_redis
 
             await consumer.start()
@@ -834,7 +834,7 @@ class TestEventConsumerEdgeCases:
         }
         data = pack_event(event)
 
-        with patch("async_task_q_monitor.services.event_consumer.logger") as mock_logger:
+        with patch("asynctasq_monitor.services.event_consumer.logger") as mock_logger:
             await consumer._handle_message(data, as_broadcaster(mock_broadcaster))
 
             mock_logger.warning.assert_called_once()
@@ -852,7 +852,7 @@ class TestEventConsumerEdgeCases:
         }
         data = pack_event(event)
 
-        with patch("async_task_q_monitor.services.event_consumer.logger") as mock_logger:
+        with patch("asynctasq_monitor.services.event_consumer.logger") as mock_logger:
             await consumer._handle_message(data, as_broadcaster(mock_broadcaster))
 
             mock_logger.warning.assert_called_once()

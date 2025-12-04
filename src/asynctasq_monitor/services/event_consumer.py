@@ -25,7 +25,7 @@ from typing import Any
 import msgpack
 from redis.asyncio import Redis
 
-from async_task_q_monitor.websocket.broadcaster import EventBroadcaster, get_event_broadcaster
+from asynctasq_monitor.websocket.broadcaster import EventBroadcaster, get_event_broadcaster
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class EventConsumer:
 
     Configuration:
         - ATQ_REDIS_URL: Redis connection URL (default: redis://localhost:6379)
-        - ATQ_EVENTS_CHANNEL: Pub/Sub channel name (default: async_task_q:events)
+        - ATQ_EVENTS_CHANNEL: Pub/Sub channel name (default: asynctasq:events)
 
     Example:
         >>> consumer = EventConsumer()
@@ -59,7 +59,7 @@ class EventConsumer:
             channel: Pub/Sub channel name (default from ATQ_EVENTS_CHANNEL env var)
         """
         self.redis_url = redis_url or os.getenv("ATQ_REDIS_URL", "redis://localhost:6379")
-        self.channel = channel or os.getenv("ATQ_EVENTS_CHANNEL", "async_task_q:events")
+        self.channel = channel or os.getenv("ATQ_EVENTS_CHANNEL", "asynctasq:events")
         self._client: Redis | None = None  # type: ignore[type-arg]
         self._pubsub: Any = None  # PubSub instance
         self._task: asyncio.Task[None] | None = None

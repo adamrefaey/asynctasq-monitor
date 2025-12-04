@@ -1,6 +1,6 @@
-# Async Task Q Monitor
+# Async TasQ Monitor
 
-Web-based monitoring UI for [async-task-q](https://github.com/adamrefaey/async-task-q) task queues.
+Web-based monitoring UI for [asynctasq](https://github.com/adamrefaey/asynctasq) task queues.
 
 ## Requirements
 
@@ -19,10 +19,10 @@ Web-based monitoring UI for [async-task-q](https://github.com/adamrefaey/async-t
 
 ```bash
 # Install as standalone package
-pip install async-task-q-monitor
+pip install asynctasq-monitor
 
 # Or install with the core package (recommended)
-pip install async-task-q[monitor]
+pip install asynctasq[monitor]
 ```
 
 > **Note**: Both installation methods include the `redis[hiredis]` package required for Redis Pub/Sub communication.
@@ -38,7 +38,7 @@ pip install async-task-q[monitor]
 Configure your task workers to use Redis as the driver or ensure `redis_url` is set for event emission:
 
 ```python
-from async_task_q import set_global_config
+from asynctasq import set_global_config
 
 # Option 1: Use Redis as queue driver (events enabled automatically)
 set_global_config(driver="redis", redis_url="redis://localhost:6379")
@@ -52,20 +52,20 @@ set_global_config(driver="postgres", redis_url="redis://localhost:6379")
 
 ```bash
 # Start the monitor server
-async-task-q-monitor
+asynctasq-monitor
 
 # Or with custom options
-async-task-q-monitor --host 0.0.0.0 --port 8080
+asynctasq-monitor --host 0.0.0.0 --port 8080
 
 # With auto-reload for development
-async-task-q-monitor --reload --log-level debug
+asynctasq-monitor --reload --log-level debug
 ```
 
 ### Embed in Your FastAPI App
 
 ```python
 from fastapi import FastAPI
-from async_task_q_monitor import create_monitoring_app
+from asynctasq_monitor import create_monitoring_app
 
 # Create a standalone monitoring app
 monitor_app = create_monitoring_app()
@@ -78,7 +78,7 @@ app.mount("/monitor", create_monitoring_app())
 ## CLI Options
 
 ```
-async-task-q-monitor [OPTIONS]
+asynctasq-monitor [OPTIONS]
 
 Options:
   --host TEXT           Host to bind to (default: 127.0.0.1)
@@ -102,8 +102,8 @@ Options:
 
 ```bash
 # Clone the repository
-git clone https://github.com/adamrefaey/async-task-q-monitor.git
-cd async-task-q-monitor
+git clone https://github.com/adamrefaey/asynctasq-monitor.git
+cd asynctasq-monitor
 
 # Initialize the project (installs all dependencies)
 just init
@@ -165,9 +165,9 @@ just typecheck
 ## Project Structure
 
 ```
-async-task-q-monitor/
+asynctasq-monitor/
 ├── src/
-│   └── async_task_q_monitor/     # Python package
+│   └── asynctasq_monitor/     # Python package
 │       ├── __init__.py
 │       ├── __main__.py           # CLI entry point
 │       ├── api/                  # FastAPI routes

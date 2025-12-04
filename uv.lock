@@ -33,19 +33,19 @@ wheels = [
 ]
 
 [[package]]
-name = "async-task-q"
-version = "0.9.4"
+name = "asynctasq"
+version = "0.9.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "msgpack" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b8/c0/a5a9f58d24847a0ec4d4ff864157bd2420e40c4d0093c3320c9b32bd6a05/async_task_q-0.9.4.tar.gz", hash = "sha256:57307a57239a3fcce1752000a797799134901ebd2443d7387bac3ff56e597106", size = 211060, upload-time = "2025-12-04T11:10:19.666Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d6/c9/aa88f542183e4a05800bcc3d88c51f099468eaa464c64721ef9e79085f82/asynctasq-0.9.6.tar.gz", hash = "sha256:e97eabeeeb2e48ccc13ad4f115ef0b17b8a93d88dee15759dd7f1a7625893ddd", size = 210878, upload-time = "2025-12-04T13:48:12.266Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8d/1a/377b2d37be8364169be92842df261d264910aaaa2b5bd79d4eb1373642bb/async_task_q-0.9.4-py3-none-any.whl", hash = "sha256:142380c716738ff95b575b6b57aa3dafe691c61223dd6e682fc1c112cb32b1ed", size = 78978, upload-time = "2025-12-04T11:10:18.493Z" },
+    { url = "https://files.pythonhosted.org/packages/0f/fc/786bed3d019efb77a71c4c12f9e36b86290ab1f5ef63ef0cf82d83749056/asynctasq-0.9.6-py3-none-any.whl", hash = "sha256:998b2c0237a5f9bbafcb0ee54e4b4c4b1e8ab59ccdd43f510a152ac114a89422", size = 78715, upload-time = "2025-12-04T13:48:11.323Z" },
 ]
 
 [[package]]
-name = "async-task-q-monitor"
+name = "asynctasq-monitor"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
@@ -59,7 +59,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "async-task-q" },
+    { name = "asynctasq" },
     { name = "bandit" },
     { name = "coverage-badge" },
     { name = "httpx" },
@@ -88,7 +88,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "async-task-q", specifier = ">=0.0.0" },
+    { name = "asynctasq", specifier = ">=0.0.0" },
     { name = "bandit", specifier = ">=1.9.2" },
     { name = "coverage-badge", specifier = ">=1.1.2" },
     { name = "httpx", specifier = ">=0.28.1" },
@@ -316,7 +316,7 @@ wheels = [
 
 [[package]]
 name = "fastapi"
-version = "0.123.7"
+version = "0.123.8"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annotated-doc" },
@@ -324,9 +324,9 @@ dependencies = [
     { name = "starlette" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/75/d2/dba013654cb7a72c99c0fe8856b3598f1289a281d972ce91b62df937a315/fastapi-0.123.7.tar.gz", hash = "sha256:d401701383afcf59bd859ead4fadd9e5aab5f783884d6a3ebe296012fdd53ab2", size = 353537, upload-time = "2025-12-04T08:29:35.277Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/99/8f2d4be9af90b3e56b865a07bdd390398e53d67c9c95c729b5772e528179/fastapi-0.123.8.tar.gz", hash = "sha256:d106de125c8dd3d4341517fa2ae36d9cffe82a6500bd910d3c080e6c42b1b490", size = 354253, upload-time = "2025-12-04T13:02:54.58Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/eb/5a/837bf2c49320272de3e0162c37cdd465cc6a938820a90166a6900a8c34d9/fastapi-0.123.7-py3-none-any.whl", hash = "sha256:31116d87ce36b66c3e853f8c0ba7c3e4b57c148abb0e72547e25257526cd2cc5", size = 111539, upload-time = "2025-12-04T08:29:33.093Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/23/dd53f49e8309454e2c52bdfffe7493cc0f00d10e2fc885d3f4d64c90731f/fastapi-0.123.8-py3-none-any.whl", hash = "sha256:d7c8db95f61d398f7e1491ad52e6b2362755f8ec61c7a740b29e70f18a2901e3", size = 111645, upload-time = "2025-12-04T13:02:53.163Z" },
 ]
 
 [package.optional-dependencies]

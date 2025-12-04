@@ -18,8 +18,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from async_task_q_monitor.api.dependencies import WorkerServiceDep
-from async_task_q_monitor.models.worker import (
+from asynctasq_monitor.api.dependencies import WorkerServiceDep
+from asynctasq_monitor.models.worker import (
     HeartbeatRequest,
     HeartbeatResponse,
     Worker,

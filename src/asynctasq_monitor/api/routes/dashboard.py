@@ -9,8 +9,8 @@ from typing import Annotated
 from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from async_task_q_monitor.api.dependencies import TaskServiceDep
-from async_task_q_monitor.models.task import TaskFilters, TaskStatus
+from asynctasq_monitor.api.dependencies import TaskServiceDep
+from asynctasq_monitor.models.task import TaskFilters, TaskStatus
 
 router = APIRouter(tags=["dashboard"])
 
@@ -137,7 +137,7 @@ async def dashboard_root() -> HealthResponse:
     """
     return HealthResponse(
         status="ok",
-        service="async-task-q-monitor",
+        service="asynctasq-monitor",
         version="1.0.0",
     )
 

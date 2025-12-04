@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from redis.asyncio import Redis  # type: ignore[import-not-found]
     from redis.asyncio.client import PubSub  # type: ignore[import-not-found]
 
-    from async_task_q_monitor.websocket.manager import ConnectionManager
+    from asynctasq_monitor.websocket.manager import ConnectionManager
 
 logger = logging.getLogger(__name__)
 
@@ -257,7 +257,7 @@ class RedisPubSubBroker:
         """
         if not self._manager:
             # Lazily import manager if not provided
-            from async_task_q_monitor.websocket.manager import get_connection_manager
+            from asynctasq_monitor.websocket.manager import get_connection_manager
 
             self._manager = get_connection_manager()
 

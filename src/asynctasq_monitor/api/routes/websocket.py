@@ -13,7 +13,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 
-from async_task_q_monitor.websocket.manager import (
+from asynctasq_monitor.websocket.manager import (
     ConnectionManager,
     get_connection_manager,
 )

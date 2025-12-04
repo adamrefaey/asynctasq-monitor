@@ -1,8 +1,8 @@
-"""CLI entry point for async-task-q-monitor.
+"""CLI entry point for asynctasq-monitor.
 
 Run the monitor server with:
-    python -m async_task_q_monitor
-    async-task-q-monitor --port 8080
+    python -m asynctasq_monitor
+    asynctasq-monitor --port 8080
 """
 
 import argparse
@@ -10,10 +10,10 @@ import sys
 
 
 def main() -> int:
-    """Run the async-task-q-monitor server."""
+    """Run the asynctasq-monitor server."""
     parser = argparse.ArgumentParser(
-        prog="async-task-q-monitor",
-        description="Web-based monitoring UI for async-task-q task queues",
+        prog="asynctasq-monitor",
+        description="Web-based monitoring UI for asynctasq task queues",
     )
     parser.add_argument(
         "--host",
@@ -51,13 +51,13 @@ def main() -> int:
     except ImportError:
         print(
             "Error: uvicorn is required to run the monitor server.\n"
-            "Install it with: pip install 'async-task-q-monitor[standard]' or pip install uvicorn",
+            "Install it with: pip install 'asynctasq-monitor[standard]' or pip install uvicorn",
             file=sys.stderr,
         )
         return 1
 
     uvicorn.run(
-        "async_task_q_monitor.api.main:create_monitoring_app",
+        "asynctasq_monitor.api.main:create_monitoring_app",
         factory=True,
         host=args.host,
         port=args.port,

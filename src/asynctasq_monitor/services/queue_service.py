@@ -6,9 +6,9 @@ and provides queue management functionality for the monitoring API.
 
 from datetime import datetime
 
-from async_task_q.core.dispatcher import get_dispatcher
-from async_task_q.drivers.base_driver import BaseDriver
-from async_task_q_monitor.models.queue import (
+from asynctasq.core.dispatcher import get_dispatcher
+from asynctasq.drivers.base_driver import BaseDriver
+from asynctasq_monitor.models.queue import (
     Queue,
     QueueActionResponse,
     QueueClearResponse,

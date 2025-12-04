@@ -1,11 +1,11 @@
-# This package is an optional addon to the main `async-task-q` project. It is
+# This package is an optional addon to the main `asynctasq` project. It is
 # expected to be installed as an extra from the core package (for example
-# `uv add async_task_q[monitor]`) so the parent package controls the combined
+# `uv add asynctasq[monitor]`) so the parent package controls the combined
 # installation of core + addons.
 [project]
-name = "async-task-q-monitor"
+name = "asynctasq-monitor"
 version = "0.1.0"
-description = "Real-time monitoring UI for async-task-q task queue"
+description = "Real-time monitoring UI for asynctasq task queue"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
@@ -18,13 +18,13 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/adamrefaey/async-task-q-monitor"
-Repository = "https://github.com/adamrefaey/async-task-q-monitor"
-Issues = "https://github.com/adamrefaey/async-task-q-monitor/issues"
-Documentation = "https://github.com/adamrefaey/async-task-q-monitor#readme"
+Homepage = "https://github.com/adamrefaey/asynctasq-monitor"
+Repository = "https://github.com/adamrefaey/asynctasq-monitor"
+Issues = "https://github.com/adamrefaey/asynctasq-monitor/issues"
+Documentation = "https://github.com/adamrefaey/asynctasq-monitor#readme"
 
 [project.scripts]
-async-task-q-monitor = "async_task_q_monitor.__main__:main"
+asynctasq-monitor = "asynctasq_monitor.__main__:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -32,18 +32,18 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build]
 # Force include static assets even if gitignored (they are build artifacts)
-artifacts = ["src/async_task_q_monitor/static/**/*"]
+artifacts = ["src/asynctasq_monitor/static/**/*"]
 
 [tool.hatch.build.targets.sdist]
 include = ["/src", "/README.md", "/LICENSE"]
 exclude = ["/frontend", "/tests", "/scripts", "/.github", "**/.gitkeep"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/async_task_q_monitor"]
+packages = ["src/asynctasq_monitor"]
 
 [dependency-groups]
 dev = [
-    "async-task-q>=0.0.0",
+    "asynctasq>=0.0.0",
     "redis[hiredis]>=7.1.0", # For event consumer testing
     "pyright>=1.1.407",
     "pytest>=9.0.1",
@@ -76,7 +76,7 @@ select = [
 ignore = ["E501"] # line too long (handled by formatter)
 
 [tool.ruff.lint.isort]
-known-first-party = ["async_task_q_monitor", "async_task_q"]
+known-first-party = ["asynctasq_monitor", "asynctasq"]
 force-sort-within-sections = true
 
 [tool.ruff.lint.mccabe]
@@ -112,7 +112,7 @@ python_functions = ["test_*"]
 addopts = [
     "-s",
     "-v",
-    # "--cov=async_task_q",
+    # "--cov=asynctasq",
     # "--cov-branch",
     # "--cov-report=term-missing",
     # "--cov-report=html",

@@ -191,12 +191,12 @@ export const useSettingsStore = create<SettingsStore>()(
 			resetToDefaults: () => set(defaultSettings),
 			clearAllData: () => {
 				// Clear persisted storage and reset to defaults
-				localStorage.removeItem("async-task-q-monitor-settings");
+				localStorage.removeItem("asynctasq-monitor-settings");
 				set(defaultSettings);
 			},
 		}),
 		{
-			name: "async-task-q-monitor-settings",
+			name: "asynctasq-monitor-settings",
 			// Only persist specific fields (exclude actions)
 			partialize: (state) => ({
 				theme: state.theme,

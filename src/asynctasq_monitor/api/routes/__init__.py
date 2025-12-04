@@ -1,4 +1,4 @@
-"""API route collection for async_task_q_monitor."""
+"""API route collection for asynctasq_monitor."""
 
 from . import dashboard, metrics, queues, tasks, websocket, workers
 

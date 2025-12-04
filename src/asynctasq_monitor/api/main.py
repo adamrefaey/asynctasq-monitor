@@ -10,8 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from async_task_q_monitor.services.event_consumer import get_event_consumer
-from async_task_q_monitor.services.metrics_collector import MetricsCollector
+from asynctasq_monitor.services.event_consumer import get_event_consumer
+from asynctasq_monitor.services.metrics_collector import MetricsCollector
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ STATIC_DIR = Path(__file__).parent.parent / "static"
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     """Manage startup and shutdown events for the monitoring app."""
-    logger.info("Starting async-task-q-monitor...")
+    logger.info("Starting asynctasq-monitor...")
 
     # Initialize a metrics collector if available. Import is absolute to
     # satisfy linters and type checkers. If the collector creation fails
@@ -74,7 +74,7 @@ def create_monitoring_app(
     import-time dependencies during packaging and tests.
     """
     app = FastAPI(
-        title="Async Task Q Monitor",
+        title="Async TasQ Monitor",
         version="1.0.0",
         docs_url="/api/docs",
         redoc_url="/api/redoc",
@@ -92,7 +92,7 @@ def create_monitoring_app(
     # Include routers; import explicitly using absolute imports.
     try:
         # local import to avoid import-time dependency on optional modules
-        from async_task_q_monitor.api.routes import (  # noqa: PLC0415
+        from asynctasq_monitor.api.routes import (  # noqa: PLC0415
             dashboard,
             metrics,
             queues,
@@ -119,7 +119,7 @@ def create_monitoring_app(
 def _mount_static_frontend(app: FastAPI) -> None:
     """Mount the static frontend SPA if the static directory exists.
 
-    The frontend is built by Vite and output to src/async_task_q_monitor/static/
+    The frontend is built by Vite and output to src/asynctasq_monitor/static/
     during the package build process. This function mounts those assets and
     sets up a catch-all route to serve the SPA for client-side routing.
     """

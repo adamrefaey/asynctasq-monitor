@@ -1,4 +1,4 @@
-"""Prometheus metrics exporter for async-task-q monitoring.
+"""Prometheus metrics exporter for asynctasq monitoring.
 
 This module implements Prometheus-format metrics following best practices:
 - Use standard metric types (Counter, Gauge, Histogram)
@@ -10,7 +10,7 @@ The metrics are compatible with Grafana dashboards and Prometheus alerting.
 
 Example Prometheus scrape config:
     scrape_configs:
-      - job_name: 'async-task-q'
+      - job_name: 'asynctasq'
         static_configs:
           - targets: ['localhost:8000']
         metrics_path: '/api/metrics/prometheus'
@@ -30,12 +30,12 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-# Namespace for all async-task-q metrics
-NAMESPACE = "async_task_q"
+# Namespace for all asynctasq metrics
+NAMESPACE = "asynctasq"
 
 
 class PrometheusMetrics:
-    """Prometheus metrics container for async-task-q monitoring.
+    """Prometheus metrics container for asynctasq monitoring.
 
     This class manages all Prometheus metrics for the monitoring system.
     It lazily initializes metrics to avoid import-time dependencies.

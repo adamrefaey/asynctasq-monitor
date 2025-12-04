@@ -11,14 +11,14 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from async_task_q_monitor.websocket.broadcaster import (
+from asynctasq_monitor.websocket.broadcaster import (
     EventBroadcaster,
     get_event_broadcaster,
     set_event_broadcaster,
 )
 
 if TYPE_CHECKING:
-    from async_task_q_monitor.websocket.manager import ConnectionManager
+    from asynctasq_monitor.websocket.manager import ConnectionManager
 
 
 class MockConnectionManager:

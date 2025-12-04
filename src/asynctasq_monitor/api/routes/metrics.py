@@ -12,7 +12,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query, Request, Response
 
-from async_task_q_monitor.services.prometheus import get_prometheus_metrics
+from asynctasq_monitor.services.prometheus import get_prometheus_metrics
 
 router = APIRouter()
 
@@ -105,20 +105,20 @@ async def prometheus_metrics() -> Response:
     Configure Prometheus to scrape this endpoint:
 
         scrape_configs:
-          - job_name: 'async-task-q-monitor'
+          - job_name: 'asynctasq-monitor'
             static_configs:
               - targets: ['localhost:8000']
             metrics_path: '/api/metrics/prometheus'
 
     Available metrics:
-        - async_task_q_tasks_enqueued_total{queue="..."}
-        - async_task_q_tasks_completed_total{queue="..."}
-        - async_task_q_tasks_failed_total{queue="..."}
-        - async_task_q_tasks_pending{queue="..."}
-        - async_task_q_tasks_running{queue="..."}
-        - async_task_q_workers_active
-        - async_task_q_task_duration_seconds{queue="..."}
-        - async_task_q_queue_depth{queue="..."}
+        - asynctasq_tasks_enqueued_total{queue="..."}
+        - asynctasq_tasks_completed_total{queue="..."}
+        - asynctasq_tasks_failed_total{queue="..."}
+        - asynctasq_tasks_pending{queue="..."}
+        - asynctasq_tasks_running{queue="..."}
+        - asynctasq_workers_active
+        - asynctasq_task_duration_seconds{queue="..."}
+        - asynctasq_queue_depth{queue="..."}
     """
     metrics = get_prometheus_metrics()
     content = metrics.generate_latest()

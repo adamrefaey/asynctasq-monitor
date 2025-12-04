@@ -10,8 +10,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 
-from async_task_q_monitor.api.dependencies import PaginationDep, TaskServiceDep
-from async_task_q_monitor.models.task import (
+from asynctasq_monitor.api.dependencies import PaginationDep, TaskServiceDep
+from asynctasq_monitor.models.task import (
     Task,
     TaskFilters,
     TaskListResponse,

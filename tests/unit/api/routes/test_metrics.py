@@ -12,7 +12,7 @@ from collections.abc import Iterator
 from httpx import AsyncClient
 import pytest
 
-from async_task_q_monitor.services.prometheus import (
+from asynctasq_monitor.services.prometheus import (
     PrometheusMetrics,
     get_prometheus_metrics,
     reset_prometheus_metrics,
@@ -81,7 +81,7 @@ class TestPrometheusMetrics:
         assert isinstance(output, bytes)
         assert len(output) > 0
         # Should contain the namespace
-        assert b"async_task_q" in output
+        assert b"asynctasq" in output
 
     def test_singleton_pattern(self) -> None:
         """Test that get_prometheus_metrics returns the same instance."""

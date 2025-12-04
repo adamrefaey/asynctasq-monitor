@@ -13,10 +13,10 @@ from typing import Annotated
 
 from fastapi import Depends, Query, Request
 
-from async_task_q_monitor.config import Settings, get_settings
-from async_task_q_monitor.services.queue_service import QueueService
-from async_task_q_monitor.services.task_service import TaskService
-from async_task_q_monitor.services.worker_service import WorkerService
+from asynctasq_monitor.config import Settings, get_settings
+from asynctasq_monitor.services.queue_service import QueueService
+from asynctasq_monitor.services.task_service import TaskService
+from asynctasq_monitor.services.worker_service import WorkerService
 
 # ---------------------------------------------------------------------------
 # Settings Dependency

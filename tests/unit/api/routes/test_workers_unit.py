@@ -2,7 +2,7 @@ from typing import Any, cast
 
 import pytest
 
-from async_task_q_monitor.models.worker import WorkerListResponse
+from asynctasq_monitor.models.worker import WorkerListResponse
 
 
 @pytest.mark.unit

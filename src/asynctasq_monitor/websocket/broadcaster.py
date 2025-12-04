@@ -13,16 +13,16 @@ Following best practices:
 import logging
 from typing import TYPE_CHECKING
 
-from async_task_q_monitor.websocket.events import (
+from asynctasq_monitor.websocket.events import (
     QueueEvent,
     TaskEvent,
     WebSocketEventType,
     WorkerEvent,
 )
-from async_task_q_monitor.websocket.manager import get_connection_manager
+from asynctasq_monitor.websocket.manager import get_connection_manager
 
 if TYPE_CHECKING:
-    from async_task_q_monitor.websocket.manager import ConnectionManager
+    from asynctasq_monitor.websocket.manager import ConnectionManager
 
 logger = logging.getLogger(__name__)
 
