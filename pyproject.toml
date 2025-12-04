@@ -13,6 +13,8 @@ dependencies = [
     "pydantic>=2.12.5",
     "pydantic-settings>=2.9.1",   # Settings management with env vars
     "prometheus-client>=0.22.0",  # Prometheus metrics exporter
+    "msgpack>=1.1.0",             # Event serialization
+    "redis[hiredis]>=7.1.0",      # Redis event backend
 ]
 
 [project.urls]
@@ -42,6 +44,7 @@ packages = ["src/async_task_q_monitor"]
 [dependency-groups]
 dev = [
     "async-task-q>=0.0.0",
+    "redis[hiredis]>=7.1.0", # For event consumer testing
     "pyright>=1.1.407",
     "pytest>=9.0.1",
     "pytest-asyncio>=1.3.0",
