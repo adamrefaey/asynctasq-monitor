@@ -38,31 +38,32 @@ repos:
 
   # Standard hooks for whitespace, JSON/TOML/YAML checks and basic safety
   # Exclude frontend/ since it's a separate project with its own tooling
+  # Exclude __snapshots__/ directories since they contain test snapshots
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^frontend/
+        exclude: ^(frontend/|.*__snapshots__/)
       - id: end-of-file-fixer
-        exclude: ^frontend/
+        exclude: ^(frontend/|.*__snapshots__/)
       - id: check-yaml
-        exclude: ^frontend/
+        exclude: ^(frontend/|.*__snapshots__/)
       - id: check-toml
-        exclude: ^frontend/
+        exclude: ^(frontend/|.*__snapshots__/)
       - id: check-json
-        exclude: ^frontend/
+        exclude: ^(frontend/|.*__snapshots__/)
       - id: check-added-large-files
         args: [--maxkb=1000]
-        exclude: ^frontend/
+        exclude: ^(frontend/|.*__snapshots__/)
       - id: check-merge-conflict
-        exclude: ^frontend/
+        exclude: ^(frontend/|.*__snapshots__/)
       - id: check-case-conflict
-        exclude: ^frontend/
+        exclude: ^(frontend/|.*__snapshots__/)
       - id: detect-private-key
-        exclude: ^frontend/
+        exclude: ^(frontend/|.*__snapshots__/)
       - id: mixed-line-ending
         args: [--fix=lf]
-        exclude: ^frontend/
+        exclude: ^(frontend/|.*__snapshots__/)
 
   # Validate pyproject.toml schema
   - repo: https://github.com/abravalheri/validate-pyproject
