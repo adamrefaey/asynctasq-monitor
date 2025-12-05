@@ -319,15 +319,27 @@ jobs:
       - name: Wait for Redis
         run: |
           set -euo pipefail
-          for i in {1..30}; do
-            if redis-cli -h 127.0.0.1 ping >/dev/null 2>&1; then
-              echo "Redis is ready"
-              exit 0
-            fi
-            sleep 1
-          done
-          echo "Redis not ready"
-          exit 1
+          wait_port() {
+            host=$1; port=$2
+            for i in {1..60}; do
+              if (echo > /dev/tcp/${host}/${port}) >/dev/null 2>&1; then
+                return 0
+              fi
+              sleep 1
+            done
+            return 1
+          }
+
+          echo "Waiting for redis (localhost:6379)..."
+          if ! wait_port 127.0.0.1 6379; then
+            echo "redis not ready - gathering diagnostics"
+            echo "--- Docker containers ---"
+            docker ps -a --format 'table {{.ID}}	{{.Names}}	{{.Image}}	{{.Status}}'
+            echo "--- Listening ports ---"
+            ss -ltnp || netstat -ltnp || true
+            exit 1
+          fi
+          echo "Redis is ready"
 
       - name: Run integration tests (activate .venv)
         env:
