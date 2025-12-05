@@ -1,0 +1,192 @@
+name: Update coverage badge
+
+'on':
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  coverage-badge:
+    if: ${{ github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event == 'push' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    env:
+      # Fallback token used to download artifacts when the automatically
+      # provided `GITHUB_TOKEN` is not present (org policy or other).
+      # Set `ARTIFACT_DOWNLOAD_TOKEN` in repository secrets to a PAT with
+      # repo permissions (or reuse `PERSONAL_ACCESS_TOKEN`).
+      ARTIFACT_DOWNLOAD_TOKEN: ${{ secrets.ARTIFACT_DOWNLOAD_TOKEN || secrets.PERSONAL_ACCESS_TOKEN || '' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Do not persist the default GITHUB_TOKEN credentials so we can
+          # configure git to push using a personal access token (PAT).
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: pyproject.toml
+
+      # The CI workflow uploads coverage.xml artifacts. The badge job should
+      # download and merge those artifacts; do not re-run tests here.
+
+      - name: Prepare token for artifact download
+        id: prepare-token
+        run: |
+          set -euo pipefail
+          # If GITHUB_TOKEN is missing, fall back to ARTIFACT_DOWNLOAD_TOKEN
+          if [ -n "${GITHUB_TOKEN:-}" ]; then
+            echo "using GITHUB_TOKEN"
+          elif [ -n "${ARTIFACT_DOWNLOAD_TOKEN:-}" ]; then
+            echo "GITHUB_TOKEN missing; using ARTIFACT_DOWNLOAD_TOKEN fallback"
+            export GITHUB_TOKEN="$ARTIFACT_DOWNLOAD_TOKEN"
+          else
+            echo "No token available for artifact download (GITHUB_TOKEN nor ARTIFACT_DOWNLOAD_TOKEN)"
+          fi
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v5
+        with:
+          # Download Python 3.12 coverage artifacts (both unit and integration)
+          pattern: coverage-*-3.12
+          path: artifacts
+          github-token: ${{ env.ARTIFACT_DOWNLOAD_TOKEN || '' }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Merge coverage XMLs and extract percentage
+        id: coverage
+        run: |
+          set -euo pipefail
+          PCT="unknown"
+          # Look for coverage.xml files under the artifacts directory produced by download-artifact
+          found=0
+          for f in $(find artifacts -type f -iname 'coverage.xml' || true); do
+            found=1
+            break
+          done
+          if [ "$found" -eq 1 ]; then
+            PCT=$(python3 .github/scripts/merge_local_coverage.py artifacts || true)
+          else
+            echo "No coverage.xml files found in downloaded artifacts"
+          fi
+          if [ -z "${PCT:-}" ]; then
+            PCT="unknown"
+          fi
+          echo "percentage=$PCT" >> $GITHUB_OUTPUT
+          echo "Coverage: $PCT"
+
+      - name: Determine coverage color
+        id: coverage-color
+        run: |
+          set -euo pipefail
+          # Ensure an output exists for color even if logic fails
+          echo "color=" >> $GITHUB_OUTPUT
+          PERCENTAGE="${{ steps.coverage.outputs.percentage }}"
+          if [[ "$PERCENTAGE" == *"%"* ]]; then
+            NUM=$(echo "$PERCENTAGE" | sed 's/%//' | cut -d. -f1)
+            if [ "$NUM" -ge 90 ]; then
+              echo "color=green" >> $GITHUB_OUTPUT
+            elif [ "$NUM" -ge 75 ]; then
+              echo "color=yellow" >> $GITHUB_OUTPUT
+            elif [ "$NUM" -ge 50 ]; then
+              echo "color=orange" >> $GITHUB_OUTPUT
+            else
+              echo "color=red" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "color=lightgrey" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Prepare code icon
+        id: code-icon
+        run: |
+          if [ -f .github/icons/codecov.svg ]; then
+            ICON_FILE=.github/icons/codecov.svg
+          else
+            ICON_FILE=""
+          fi
+          if [ -n "$ICON_FILE" ] && [ -f "$ICON_FILE" ]; then
+            ICON_BASE64=$(base64 -w0 "$ICON_FILE")
+            echo "icon=data:image/svg+xml;base64,$ICON_BASE64" >> $GITHUB_OUTPUT
+            echo "icon_path=$ICON_FILE" >> $GITHUB_OUTPUT
+          else
+            echo "icon=" >> $GITHUB_OUTPUT
+            echo "icon_path=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate coverage badge with icon
+        uses: emibcn/badge-action@v2
+        with:
+          label: "Coverage"
+          status: ${{ steps.coverage.outputs.percentage }}
+          color: ${{ steps.coverage-color.outputs.color }}
+          icon: ${{ steps.code-icon.outputs.icon }}
+          path: ".github/coverage.svg"
+
+      - name: Ensure icon is embedded in SVG
+        run: |
+          FILE=.github/coverage.svg
+          ICON_PATH=${{ steps.code-icon.outputs.icon_path }}
+          if [ -f "$FILE" ] && [ -n "$ICON_PATH" ] && [ -f "$ICON_PATH" ]; then
+            ICON_B64=$(base64 -w0 "$ICON_PATH")
+            export ICON_B64
+            # Replace any xlink:href="..." or href="..." in the file with the data URL
+            sed -E -i "s/(xlink:href|href)=\"[^\"]*\"/xlink:href=\"data:image\/svg+xml;base64,$ICON_B64\"/g" "$FILE"
+          fi
+
+      - name: Commit coverage badge
+        env:
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          GIT_USER_NAME: ${{ secrets.GIT_USER_NAME || github.actor }}
+          GIT_USER_EMAIL: ${{ secrets.GIT_USER_EMAIL || format('%s@users.noreply.github.com', github.actor) }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PERSONAL_ACCESS_TOKEN:-}" ]; then
+            echo "PERSONAL_ACCESS_TOKEN is not set. Skipping push to remote to avoid protected branch rejection."
+            exit 0
+          fi
+          git config user.name "$GIT_USER_NAME"
+          git config user.email "$GIT_USER_EMAIL"
+          remote_url=$(git remote get-url origin)
+          if [[ "$remote_url" == https://* ]]; then
+            auth_remote=$(echo "$remote_url" | sed -E "s#https://#https://${PERSONAL_ACCESS_TOKEN}@#")
+            git remote set-url origin "$auth_remote"
+          fi
+          # Stash any generated/untracked files (badge SVGs), pull latest
+          # changes, then restore. This avoids "cannot pull with rebase: You
+          # have unstaged changes" errors when multiple workflows race.
+          git stash push --include-untracked -m "badge-workflow-stash" || true
+          git pull --rebase origin main || true
+          git stash pop --index || true
+          git add .github/coverage.svg || true
+          if ! git diff --staged --quiet; then
+            if [ -n "${GPG_PRIVATE_KEY:-}" ]; then
+              echo "$GPG_PRIVATE_KEY" | gpg --batch --import || true
+              keyid=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec/ {print $5; exit}') || true
+              if [ -n "$keyid" ]; then
+                git config user.signingkey "$keyid" || true
+                git config commit.gpgsign true || true
+                export GIT_COMMITTER_SIGNINGKEY="$keyid"
+              fi
+            fi
+            if [ -n "${GPG_PRIVATE_KEY:-}" ]; then
+              git commit -S -m "chore: update coverage badge" || true
+            else
+              git commit -m "chore: update coverage badge" || true
+            fi
+            git push origin HEAD:main || true
+          else
+            echo "No changes to coverage badge"
+          fi

@@ -1,0 +1,152 @@
+name: Update test status badge
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  test-badge:
+    if: ${{ github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event == 'push' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Check CI workflow status (for push/PR)
+        id: ci-status
+        uses: actions/github-script@v8
+        with:
+          script: |
+            // Always define outputs to avoid linter warnings and ensure
+            // downstream steps can safely reference them.
+            core.setOutput('status', '');
+            core.setOutput('color', '');
+
+            // Handle workflow_run events directly (use payload conclusion)
+            if (context.eventName === 'workflow_run') {
+              const conclusion = context.payload.workflow_run && context.payload.workflow_run.conclusion;
+              if (conclusion === 'success') {
+                core.setOutput('status', 'passing');
+                core.setOutput('color', 'brightgreen');
+              } else if (conclusion === 'failure' || conclusion === 'cancelled') {
+                core.setOutput('status', 'failing');
+                core.setOutput('color', 'red');
+              } else {
+                core.setOutput('status', 'running');
+                core.setOutput('color', 'yellow');
+              }
+              return;
+            }
+
+            // For push/PR events, inspect the latest CI run via API
+            const { data: runs } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'ci.yml',
+              per_page: 1
+            });
+
+            if (runs.workflow_runs.length > 0) {
+              const conclusion = runs.workflow_runs[0].conclusion;
+              if (conclusion === 'success') {
+                core.setOutput('status', 'passing');
+                core.setOutput('color', 'brightgreen');
+              } else if (conclusion === 'failure' || conclusion === 'cancelled') {
+                core.setOutput('status', 'failing');
+                core.setOutput('color', 'red');
+              } else {
+                core.setOutput('status', 'running');
+                core.setOutput('color', 'yellow');
+              }
+            } else {
+              core.setOutput('status', 'unknown');
+              core.setOutput('color', 'lightgrey');
+            }
+
+      - name: Set badge values
+        id: badge-values
+        run: |
+          # Read status/color from the single `ci-status` step which
+          # handles both `workflow_run` and push/PR events.
+          STATUS="${{ steps.ci-status.outputs.status || 'unknown' }}"
+          COLOR="${{ steps.ci-status.outputs.color || 'lightgrey' }}"
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "color=$COLOR" >> $GITHUB_OUTPUT
+
+      - name: Prepare pytest icon
+        id: pytest-icon
+        run: |
+          if [ -f .github/icons/pytest.svg ]; then
+            ICON_BASE64=$(base64 -w0 .github/icons/pytest.svg)
+            echo "icon=data:image/svg+xml;base64,$ICON_BASE64" >> $GITHUB_OUTPUT
+          else
+            echo "icon=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate test status badge
+        uses: emibcn/badge-action@v2
+        with:
+          label: "Tests"
+          status: ${{ steps.badge-values.outputs.status }}
+          color: ${{ steps.badge-values.outputs.color }}
+          icon: ${{ steps.pytest-icon.outputs.icon }}
+          path: ".github/tests.svg"
+
+      - name: Ensure icon is embedded in SVG
+        run: |
+          FILE=.github/tests.svg
+          ICON=.github/icons/pytest.svg
+          if [ -f "$FILE" ] && [ -f "$ICON" ]; then
+            ICON_B64=$(base64 -w0 "$ICON")
+            perl -0777 -pe "s/xlink:href=\"[^\"]*\"/xlink:href=\"data:image\/svg\+xml;base64,$ICON_B64\"/s" -i "$FILE"
+          fi
+
+      - name: Commit test badge
+        env:
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          GIT_USER_NAME: ${{ secrets.GIT_USER_NAME || github.actor }}
+          GIT_USER_EMAIL: ${{ secrets.GIT_USER_EMAIL || format('%s@users.noreply.github.com', github.actor) }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PERSONAL_ACCESS_TOKEN:-}" ]; then
+            echo "PERSONAL_ACCESS_TOKEN is not set. Skipping push to remote to avoid protected branch rejection."
+            exit 0
+          fi
+          git config user.name "$GIT_USER_NAME"
+          git config user.email "$GIT_USER_EMAIL"
+          remote_url=$(git remote get-url origin)
+          if [[ "$remote_url" == https://* ]]; then
+            auth_remote=$(echo "$remote_url" | sed -E "s#https://#https://${PERSONAL_ACCESS_TOKEN}@#")
+            git remote set-url origin "$auth_remote"
+          fi
+          # Stash any generated/untracked files (badge SVGs), pull latest
+          # changes, then restore. This avoids "cannot pull with rebase: You
+          # have unstaged changes" errors when multiple workflows race.
+          git stash push --include-untracked -m "badge-workflow-stash" || true
+          git pull --rebase origin main || true
+          git stash pop --index || true
+          git add .github/tests.svg || true
+          if ! git diff --staged --quiet; then
+            if [ -n "${GPG_PRIVATE_KEY:-}" ]; then
+              echo "$GPG_PRIVATE_KEY" | gpg --batch --import || true
+              keyid=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec/ {print $5; exit}') || true
+              if [ -n "$keyid" ]; then
+                git config user.signingkey "$keyid" || true
+                git config commit.gpgsign true || true
+                export GIT_COMMITTER_SIGNINGKEY="$keyid"
+              fi
+            fi
+            if [ -n "${GPG_PRIVATE_KEY:-}" ]; then
+              git commit -S -m "chore: update test status badge" || true
+            else
+              git commit -m "chore: update test status badge" || true
+            fi
+            git push origin HEAD:main || true
+          else
+            echo "No changes to test badge"
+          fi
