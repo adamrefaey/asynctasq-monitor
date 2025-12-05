@@ -35,14 +35,14 @@ wheels = [
 
 [[package]]
 name = "asynctasq"
-version = "0.9.6"
+version = "0.9.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "msgpack" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d6/c9/aa88f542183e4a05800bcc3d88c51f099468eaa464c64721ef9e79085f82/asynctasq-0.9.6.tar.gz", hash = "sha256:e97eabeeeb2e48ccc13ad4f115ef0b17b8a93d88dee15759dd7f1a7625893ddd", size = 210878, upload-time = "2025-12-04T13:48:12.266Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/27/23/094e1e68ef681234c785905a51fa904dacf157829ec1e61d8986c15a502b/asynctasq-0.9.7.tar.gz", hash = "sha256:2144dc32c65b4ae605f69bb1d9d77b115b7b6779fa48dd7eca03840831e87484", size = 340435, upload-time = "2025-12-05T23:38:11.903Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0f/fc/786bed3d019efb77a71c4c12f9e36b86290ab1f5ef63ef0cf82d83749056/asynctasq-0.9.6-py3-none-any.whl", hash = "sha256:998b2c0237a5f9bbafcb0ee54e4b4c4b1e8ab59ccdd43f510a152ac114a89422", size = 78715, upload-time = "2025-12-04T13:48:11.323Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/78/7b4485b650d946cce8fed2e1a24904f50bb6c4d3c03a47381a0bda259b77/asynctasq-0.9.7-py3-none-any.whl", hash = "sha256:55c8c5621e1fc1696e28b9903d37f48a5ecd65cdb1f0c9c3066874b24b005a4f", size = 78474, upload-time = "2025-12-05T23:38:10.59Z" },
 ]
 
 [[package]]
