@@ -9,12 +9,24 @@ description = "Real-time monitoring UI for asynctasq task queue"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "fastapi[standard]>=0.122.0",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.9.1",   # Settings management with env vars
-    "prometheus-client>=0.22.0",  # Prometheus metrics exporter
     "msgpack>=1.1.0",             # Event serialization
     "redis[hiredis]>=7.1.0",      # Redis event backend
+    "typer>=0.15.0",              # CLI framework
+    "rich>=14.0.0",               # Rich text formatting for CLI
+]
+
+[project.optional-dependencies]
+web = [
+    "fastapi[standard]>=0.122.0",
+    "prometheus-client>=0.22.0",  # Prometheus metrics exporter
+]
+tui = [
+    "textual>=3.3.0",             # TUI framework
+]
+all = [
+    "asynctasq-monitor[web,tui]",
 ]
 
 [project.urls]
@@ -44,7 +56,8 @@ packages = ["src/asynctasq_monitor"]
 [dependency-groups]
 dev = [
     "asynctasq>=0.0.0",
-    "redis[hiredis]>=7.1.0", # For event consumer testing
+    "asynctasq-monitor[all]",     # Install all optional extras for dev
+    "redis[hiredis]>=7.1.0",      # For event consumer testing
     "pyright>=1.1.407",
     "pytest>=9.0.1",
     "pytest-asyncio>=1.3.0",

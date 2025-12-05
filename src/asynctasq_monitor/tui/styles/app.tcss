@@ -1,0 +1,67 @@
+/* AsyncTasQ Monitor TUI Styles
+ *
+ * Base styles for the terminal-based monitoring UI.
+ * Uses Textual CSS (TCSS) syntax.
+ */
+
+/* Global screen styling */
+Screen {
+    background: $surface;
+}
+
+/* Header docking */
+Header {
+    dock: top;
+}
+
+/* Footer docking */
+Footer {
+    dock: bottom;
+}
+
+/* Tabbed content area */
+TabbedContent {
+    height: 1fr;
+}
+
+/* Placeholder content styling */
+#dashboard-placeholder,
+#tasks-placeholder,
+#workers-placeholder,
+#queues-placeholder {
+    width: 100%;
+    height: 100%;
+    content-align: center middle;
+    text-style: bold;
+    color: $text-muted;
+}
+
+/* Help screen styling */
+HelpScreen {
+    align: center middle;
+}
+
+#help-dialog {
+    width: 60;
+    height: auto;
+    max-height: 80%;
+    border: thick $primary;
+    background: $surface;
+    padding: 1 2;
+}
+
+#help-title {
+    text-align: center;
+    text-style: bold;
+    color: $primary;
+    margin-bottom: 1;
+}
+
+#help-content {
+    height: auto;
+}
+
+#help-close-btn {
+    margin-top: 1;
+    width: 100%;
+}
