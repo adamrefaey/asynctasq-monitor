@@ -11,6 +11,7 @@ from textual.binding import Binding
 from textual.widgets import Footer, Header, Static, TabbedContent, TabPane
 
 from asynctasq_monitor.tui.screens.dashboard import DashboardScreen
+from asynctasq_monitor.tui.screens.tasks import TasksScreen
 
 
 class AsyncTasQMonitorTUI(App[None]):
@@ -58,7 +59,7 @@ class AsyncTasQMonitorTUI(App[None]):
             with TabPane("Dashboard", id="dashboard"):
                 yield DashboardScreen(id="dashboard-screen")
             with TabPane("Tasks", id="tasks"):
-                yield Static("📋 Tasks - Coming Soon", id="tasks-placeholder")
+                yield TasksScreen(id="tasks-screen")
             with TabPane("Workers", id="workers"):
                 yield Static("👷 Workers - Coming Soon", id="workers-placeholder")
             with TabPane("Queues", id="queues"):

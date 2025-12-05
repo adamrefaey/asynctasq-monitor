@@ -106,6 +106,9 @@ pythonVersion = "3.14"
 typeCheckingMode = "standard"
 venvPath = "."
 venv = ".venv"
+# Disable reportCallIssue for Pydantic v2 models that use Field(default=...)
+# Pyright doesn't fully understand Pydantic's Field default syntax
+reportCallIssue = "none"
 
 [tool.pydantic-mypy]
 # Enable pydantic plugin features for type checkers

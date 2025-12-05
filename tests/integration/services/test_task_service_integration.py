@@ -957,7 +957,7 @@ class TestIntegrationEdgeCases:
 class TestTaskServiceInitialization:
     """Tests for TaskService initialization."""
 
-    def test_init_creates_service_with_no_driver(self) -> None:
+    async def test_init_creates_service_with_no_driver(self) -> None:
         """TaskService should initialize with _driver set to None."""
         # Act
         service = TaskService()
