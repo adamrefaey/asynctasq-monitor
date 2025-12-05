@@ -64,7 +64,8 @@ class TestAsyncTasQMonitorTUI:
     async def test_app_compose(self) -> None:
         """Test that the app composes correctly."""
         app = AsyncTasQMonitorTUI()
-        async with app.run_test():
+        async with app.run_test() as pilot:
+            await pilot.pause()
             # Check that main components are present
             assert app.query_one("Header") is not None
             assert app.query_one("Footer") is not None
@@ -72,10 +73,24 @@ class TestAsyncTasQMonitorTUI:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
+    async def test_app_has_dashboard_screen(self) -> None:
+        """Test that the app has DashboardScreen in the dashboard tab."""
+        from asynctasq_monitor.tui.screens.dashboard import DashboardScreen
+
+        app = AsyncTasQMonitorTUI()
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            # Check dashboard screen exists
+            dashboard = app.query_one("#dashboard-screen", DashboardScreen)
+            assert dashboard is not None
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
     async def test_app_has_tabs(self) -> None:
         """Test that the app has all expected tabs."""
         app = AsyncTasQMonitorTUI()
-        async with app.run_test():
+        async with app.run_test() as pilot:
+            await pilot.pause()
             # Check tab panes exist
             assert app.query_one("#dashboard") is not None
             assert app.query_one("#tasks") is not None
@@ -87,7 +102,8 @@ class TestAsyncTasQMonitorTUI:
     async def test_switch_tab_action(self) -> None:
         """Test that switching tabs works."""
         app = AsyncTasQMonitorTUI()
-        async with app.run_test():
+        async with app.run_test() as pilot:
+            await pilot.pause()
             from textual.widgets import TabbedContent
 
             tabbed_content = app.query_one(TabbedContent)

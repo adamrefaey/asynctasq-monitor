@@ -25,7 +25,6 @@ TabbedContent {
 }
 
 /* Placeholder content styling */
-#dashboard-placeholder,
 #tasks-placeholder,
 #workers-placeholder,
 #queues-placeholder {
@@ -36,7 +35,109 @@ TabbedContent {
     color: $text-muted;
 }
 
-/* Help screen styling */
+/* ========================================
+ * Dashboard Screen Styles
+ * ======================================== */
+
+DashboardScreen {
+    height: 100%;
+    padding: 1;
+}
+
+/* Metrics row layout */
+#metrics-row {
+    height: 8;
+    margin: 1 0;
+}
+
+/* Section titles */
+.section-title {
+    margin: 1 0 0 1;
+    text-style: bold;
+    color: $text;
+}
+
+/* Throughput sparkline container */
+#throughput-container {
+    height: 8;
+    margin: 0 1;
+    padding: 1;
+    background: $panel;
+    border: solid $primary-darken-2;
+}
+
+#throughput-sparkline {
+    width: 100%;
+    height: 100%;
+}
+
+/* Sparkline color customization */
+Sparkline > .sparkline--max-color {
+    color: $success;
+}
+
+Sparkline > .sparkline--min-color {
+    color: $primary;
+}
+
+/* Recent activity section */
+#recent-activity {
+    margin: 0 1;
+    padding: 1;
+    height: 1fr;
+    background: $panel;
+    border: solid $primary-darken-2;
+}
+
+/* ========================================
+ * MetricCard Widget Styles
+ * ======================================== */
+
+MetricCard {
+    width: 1fr;
+    height: 100%;
+    margin: 0 1;
+    padding: 1 2;
+    background: $panel;
+    border: solid $primary;
+}
+
+MetricCard .metric-label {
+    text-align: center;
+    color: $text-muted;
+    margin-bottom: 1;
+}
+
+MetricCard Digits {
+    text-align: center;
+    width: 100%;
+}
+
+/* MetricCard color variants */
+MetricCard.metric-warning Digits {
+    color: $warning;
+}
+
+MetricCard.metric-accent Digits {
+    color: $accent;
+}
+
+MetricCard.metric-success Digits {
+    color: $success;
+}
+
+MetricCard.metric-error Digits {
+    color: $error;
+}
+
+MetricCard.metric-default Digits {
+    color: $text;
+}
+
+/* ========================================
+ * Help Screen Styles
+ * ======================================== */
+
 HelpScreen {
     align: center middle;
 }

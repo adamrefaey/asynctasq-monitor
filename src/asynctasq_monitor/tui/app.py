@@ -10,6 +10,8 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import Footer, Header, Static, TabbedContent, TabPane
 
+from asynctasq_monitor.tui.screens.dashboard import DashboardScreen
+
 
 class AsyncTasQMonitorTUI(App[None]):
     """TUI Monitor for AsyncTasQ task queues.
@@ -54,7 +56,7 @@ class AsyncTasQMonitorTUI(App[None]):
         yield Header()
         with TabbedContent(initial="dashboard"):
             with TabPane("Dashboard", id="dashboard"):
-                yield Static("📊 Dashboard - Coming Soon", id="dashboard-placeholder")
+                yield DashboardScreen(id="dashboard-screen")
             with TabPane("Tasks", id="tasks"):
                 yield Static("📋 Tasks - Coming Soon", id="tasks-placeholder")
             with TabPane("Workers", id="workers"):
