@@ -5,8 +5,16 @@ This package contains all screen definitions for the TUI.
 
 from asynctasq_monitor.tui.screens.dashboard import DashboardScreen
 from asynctasq_monitor.tui.screens.help import HelpScreen
+from asynctasq_monitor.tui.screens.queues import QueuesScreen
 from asynctasq_monitor.tui.screens.task_detail import TaskDetailScreen
 from asynctasq_monitor.tui.screens.tasks import TasksScreen
 from asynctasq_monitor.tui.screens.workers import WorkersScreen
 
-__all__ = ["DashboardScreen", "HelpScreen", "TaskDetailScreen", "TasksScreen", "WorkersScreen"]
+__all__ = [
+    "DashboardScreen",
+    "HelpScreen",
+    "QueuesScreen",
+    "TaskDetailScreen",
+    "TasksScreen",
+    "WorkersScreen",
+]

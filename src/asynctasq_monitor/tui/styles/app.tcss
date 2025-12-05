@@ -425,3 +425,55 @@ LoadBar.load-medium ProgressBar Bar > .bar--bar {
 LoadBar.load-high ProgressBar Bar > .bar--bar {
     color: $error;
 }
+
+/* ========================================
+ * Queues Screen Styles
+ * ======================================== */
+
+QueuesScreen {
+    height: 100%;
+    padding: 1;
+}
+
+QueuesScreen .section-title {
+    margin: 0 0 0 1;
+    text-style: bold;
+    color: $text;
+}
+
+/* Queue Table Widget Styles */
+QueueTable {
+    height: 1fr;
+    margin: 0 1;
+}
+
+QueueTable > .datatable--cursor {
+    background: $accent 30%;
+}
+
+/* Queue Summary Bar Styles */
+QueueSummary {
+    height: 3;
+    margin: 1 1;
+    padding: 0 1;
+    background: $panel;
+    border: solid $primary-darken-2;
+}
+
+QueueSummary Static {
+    width: 1fr;
+    text-align: center;
+    content-align: center middle;
+}
+
+QueueSummary .summary-queues {
+    color: $primary;
+}
+
+QueueSummary .summary-pending {
+    color: $warning;
+}
+
+QueueSummary .summary-rate {
+    color: $success;
+}

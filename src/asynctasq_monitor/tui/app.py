@@ -8,9 +8,10 @@ from pathlib import Path
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.widgets import Footer, Header, Static, TabbedContent, TabPane
+from textual.widgets import Footer, Header, TabbedContent, TabPane
 
 from asynctasq_monitor.tui.screens.dashboard import DashboardScreen
+from asynctasq_monitor.tui.screens.queues import QueuesScreen
 from asynctasq_monitor.tui.screens.tasks import TasksScreen
 from asynctasq_monitor.tui.screens.workers import WorkersScreen
 
@@ -64,7 +65,7 @@ class AsyncTasQMonitorTUI(App[None]):
             with TabPane("Workers", id="workers"):
                 yield WorkersScreen(id="workers-screen")
             with TabPane("Queues", id="queues"):
-                yield Static("📬 Queues - Coming Soon", id="queues-placeholder")
+                yield QueuesScreen(id="queues-screen")
         yield Footer()
 
     def action_switch_tab(self, tab_id: str) -> None:
