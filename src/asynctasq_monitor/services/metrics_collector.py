@@ -49,7 +49,7 @@ class MetricsCollector:
     def __init__(
         self,
         poll_interval: float | None = None,
-        connection_manager: ConnectionManager | None = None,
+        connection_manager: "ConnectionManager | None" = None,
     ) -> None:
         """Initialize the metrics collector.
 

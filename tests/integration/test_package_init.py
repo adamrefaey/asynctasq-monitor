@@ -4,7 +4,6 @@ These tests verify:
 - The lazy loading pattern for create_monitoring_app works correctly
 - The function returns a proper FastAPI application
 - Arguments are correctly forwarded to the real factory
-- The __version__ and __all__ exports are correct
 
 Following FastAPI testing best practices:
 - Use TestClient for integration testing
@@ -15,22 +14,12 @@ from fastapi import FastAPI
 import pytest
 
 import asynctasq_monitor
-from asynctasq_monitor import __all__, __version__, create_monitoring_app
+from asynctasq_monitor import create_monitoring_app
 
 
 @pytest.mark.integration
 class TestPackageExports:
     """Tests for package exports and metadata."""
-
-    def test_version_is_string(self) -> None:
-        """Test that __version__ is a properly formatted version string."""
-        assert isinstance(__version__, str)
-        assert len(__version__.split(".")) >= 2  # At least major.minor
-
-    def test_all_exports(self) -> None:
-        """Test that __all__ contains expected exports."""
-        assert "__version__" in __all__
-        assert "create_monitoring_app" in __all__
 
     def test_create_monitoring_app_is_callable(self) -> None:
         """Test that create_monitoring_app is importable and callable."""

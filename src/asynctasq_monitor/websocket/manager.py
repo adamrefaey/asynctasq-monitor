@@ -74,7 +74,7 @@ class ConnectionManager:
         """Return a mapping of room names to connection counts."""
         return {room: len(clients) for room, clients in self._rooms.items() if clients}
 
-    async def connect(self, websocket: WebSocket, rooms: Iterable[str] | None = None) -> None:
+    async def connect(self, websocket: WebSocket, rooms: "Iterable[str] | None" = None) -> None:
         """Accept a WebSocket connection and subscribe to specified rooms.
 
         Args:
@@ -238,7 +238,7 @@ class ConnectionManager:
 
     async def broadcast_to_rooms(
         self,
-        rooms: Iterable[str],
+        rooms: "Iterable[str]",
         message: dict[str, Any] | BaseModel,
     ) -> int:
         """Broadcast a message to multiple rooms (deduplicating recipients).

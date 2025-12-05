@@ -158,55 +158,55 @@ class PrometheusMetrics:
         logger.info("Prometheus metrics initialized")
 
     @property
-    def registry(self) -> CollectorRegistry | None:
+    def registry(self) -> "CollectorRegistry | None":
         """Get the Prometheus CollectorRegistry."""
         self._ensure_initialized()
         return self._registry
 
     @property
-    def tasks_enqueued(self) -> Counter | None:
+    def tasks_enqueued(self) -> "Counter | None":
         """Counter for total tasks enqueued."""
         self._ensure_initialized()
         return self._tasks_enqueued
 
     @property
-    def tasks_completed(self) -> Counter | None:
+    def tasks_completed(self) -> "Counter | None":
         """Counter for total tasks completed."""
         self._ensure_initialized()
         return self._tasks_completed
 
     @property
-    def tasks_failed(self) -> Counter | None:
+    def tasks_failed(self) -> "Counter | None":
         """Counter for total tasks failed."""
         self._ensure_initialized()
         return self._tasks_failed
 
     @property
-    def tasks_pending(self) -> Gauge | None:
+    def tasks_pending(self) -> "Gauge | None":
         """Gauge for pending tasks per queue."""
         self._ensure_initialized()
         return self._tasks_pending
 
     @property
-    def tasks_running(self) -> Gauge | None:
+    def tasks_running(self) -> "Gauge | None":
         """Gauge for running tasks per queue."""
         self._ensure_initialized()
         return self._tasks_running
 
     @property
-    def workers_active(self) -> Gauge | None:
+    def workers_active(self) -> "Gauge | None":
         """Gauge for active workers."""
         self._ensure_initialized()
         return self._workers_active
 
     @property
-    def task_duration(self) -> Histogram | None:
+    def task_duration(self) -> "Histogram | None":
         """Histogram for task execution duration."""
         self._ensure_initialized()
         return self._task_duration
 
     @property
-    def queue_depth(self) -> Gauge | None:
+    def queue_depth(self) -> "Gauge | None":
         """Gauge for queue depth."""
         self._ensure_initialized()
         return self._queue_depth

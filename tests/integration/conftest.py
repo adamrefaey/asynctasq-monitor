@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 
 @pytest_asyncio.fixture
-async def redis_client() -> AsyncIterator[Redis]:
+async def redis_client() -> AsyncIterator["Redis"]:
     """Real Redis client for integration tests.
 
     Uses a separate database (DB 15) to avoid conflicts with development data.

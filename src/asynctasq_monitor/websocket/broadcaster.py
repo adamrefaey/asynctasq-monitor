@@ -48,7 +48,7 @@ class EventBroadcaster:
         ... )
     """
 
-    def __init__(self, connection_manager: ConnectionManager | None = None) -> None:
+    def __init__(self, connection_manager: "ConnectionManager | None" = None) -> None:
         """Initialize the event broadcaster.
 
         Args:
@@ -58,7 +58,7 @@ class EventBroadcaster:
         self._manager = connection_manager
 
     @property
-    def manager(self) -> ConnectionManager:
+    def manager(self) -> "ConnectionManager":
         """Get the connection manager, lazily initializing if needed."""
         if self._manager is None:
             self._manager = get_connection_manager()

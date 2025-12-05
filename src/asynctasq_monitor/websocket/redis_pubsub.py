@@ -56,7 +56,7 @@ class RedisPubSubBroker:
     def __init__(
         self,
         redis_url: str = "redis://localhost:6379",
-        connection_manager: ConnectionManager | None = None,
+        connection_manager: "ConnectionManager | None" = None,
     ) -> None:
         """Initialize the Redis Pub/Sub broker.
 
@@ -291,7 +291,7 @@ def get_redis_broker() -> RedisPubSubBroker | None:
 
 async def init_redis_broker(
     redis_url: str,
-    connection_manager: ConnectionManager | None = None,
+    connection_manager: "ConnectionManager | None" = None,
 ) -> RedisPubSubBroker:
     """Initialize and start the global Redis Pub/Sub broker.
 

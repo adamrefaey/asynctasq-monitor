@@ -25,14 +25,12 @@ where FastAPI is not installed.
 from importlib import import_module
 from typing import TYPE_CHECKING
 
-__version__ = "0.1.0"
-
 if TYPE_CHECKING:
     # Only import for type checking to avoid a runtime dependency.
     from fastapi import FastAPI  # pragma: no cover - typing only
 
 
-def create_monitoring_app(*args: object, **kwargs: object) -> FastAPI:
+def create_monitoring_app(*args: object, **kwargs: object) -> "FastAPI":
     """Lazily import and call `create_monitoring_app` from `api.main`.
 
     Returns a `FastAPI` application instance. Arguments are forwarded to
@@ -42,4 +40,4 @@ def create_monitoring_app(*args: object, **kwargs: object) -> FastAPI:
     return module.create_monitoring_app(*args, **kwargs)
 
 
-__all__ = ["create_monitoring_app", "__version__"]
+__all__ = ["create_monitoring_app"]

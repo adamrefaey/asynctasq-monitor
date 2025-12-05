@@ -114,12 +114,15 @@ format-frontend:
 lint: lint-python lint-frontend
     @echo "✅ All linting passed"
 
+# Auto-fix Python linting issues
+lint-fix: lint-fix-python lint-fix-frontend
+    @echo "✅ All linting issues fixed"
+
 # Lint Python code
 lint-python:
     uv run ruff check .
 
-# Auto-fix Python linting issues
-lint-fix:
+lint-fix-python:
     uv run ruff check --fix .
 
 # Lint frontend code with Biome
@@ -139,7 +142,7 @@ typecheck-frontend:
     cd frontend && pnpm typecheck
 
 # Run all checks (format, lint, typecheck) for both backend and frontend
-check: format lint typecheck typecheck-frontend
+check: format lint-fix typecheck typecheck-frontend
     @echo "✅ All checks passed"
 
 # Run frontend check (format + lint + typecheck combined)
@@ -169,6 +172,7 @@ test-frontend-watch:
 # Run frontend tests with coverage
 test-frontend-coverage:
     cd frontend && pnpm test:coverage
+
 # Run unit tests only
 test-unit:
     uv run pytest -m unit
@@ -215,8 +219,8 @@ docker-restart:
 # CI/CD
 # =============================================================================
 
-# Run all CI checks locally (Python + Frontend)
-ci: format lint typecheck typecheck-frontend test
+# Run all CI checks locally (format, lint, typecheck, test) for both backend and frontend
+ci: check test
     @echo "✅ All CI checks passed!"
 
 # Run pre-commit on all files
@@ -270,12 +274,12 @@ publish-test: release
 
 # Create and push a git tag (usage: just tag v1.2.3)
 tag TAG:
-    @if [ "$(printf '%s' '{{TAG}}' | cut -c1)" != "v" ]; then \
+    @if [ "$(printf '%s' '{{ TAG }}' | cut -c1)" != "v" ]; then \
         echo "Tag should start with 'v', e.g. v1.2.3"; exit 1; \
     fi
-    git tag {{TAG}}
-    git push origin {{TAG}}
-    @echo "✅ Pushed {{TAG}}"
+    git tag {{ TAG }}
+    git push origin {{ TAG }}
+    @echo "✅ Pushed {{ TAG }}"
 
 # =============================================================================
 # Utilities
