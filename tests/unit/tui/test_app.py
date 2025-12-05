@@ -155,3 +155,132 @@ class TestAsyncTasQMonitorTUI:
 
             # Should be back to main screen
             assert not isinstance(app.screen, HelpScreen)
+
+
+class TestAsyncTasQMonitorTUIEventHandling:
+    """Tests for event handling in the TUI application."""
+
+    @pytest.mark.unit
+    def test_app_has_metrics_tracker(self) -> None:
+        """Test that the app has a metrics tracker."""
+        app = AsyncTasQMonitorTUI()
+        assert app._metrics_tracker is not None
+        assert app._metrics_tracker.pending == 0
+
+    @pytest.mark.unit
+    def test_app_has_event_consumer_attribute(self) -> None:
+        """Test that the app has event consumer attribute."""
+        app = AsyncTasQMonitorTUI()
+        assert app._event_consumer is None  # Not started yet
+
+    @pytest.mark.unit
+    def test_app_has_connected_reactive(self) -> None:
+        """Test that the app has is_connected reactive attribute."""
+        app = AsyncTasQMonitorTUI()
+        assert app.is_connected is False
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_connection_status_updates_subtitle(self) -> None:
+        """Test that connection status updates the subtitle."""
+        from unittest.mock import patch
+
+        from asynctasq_monitor.tui.event_handler import ConnectionStatusChanged
+
+        app = AsyncTasQMonitorTUI()
+
+        # Mock the event streaming to prevent actual Redis connection
+        with patch.object(app, "_start_event_streaming"):
+            async with app.run_test() as pilot:
+                await pilot.pause()
+
+                # Without event streaming, should be disconnected initially
+                assert app.is_connected is False
+                assert "Disconnected" in app.sub_title
+
+                # Simulate connection status change
+                app.post_message(ConnectionStatusChanged(connected=True))
+                await pilot.pause()
+
+                assert app.is_connected is True
+                assert "Connected" in app.sub_title
+
+                # Simulate disconnection
+                app.post_message(ConnectionStatusChanged(connected=False, error="Lost connection"))
+                await pilot.pause()
+
+                assert app.is_connected is False
+                assert "Disconnected" in app.sub_title
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_event_updates_dashboard_metrics(self) -> None:
+        """Test that events update dashboard metrics."""
+        from asynctasq_monitor.tui.event_handler import (
+            EventReceived,
+            TUIEvent,
+            TUIEventType,
+        )
+
+        app = AsyncTasQMonitorTUI()
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            # Create a task enqueued event
+            event = TUIEvent(
+                type=TUIEventType.TASK_ENQUEUED,
+                data={"task_id": "test123", "task_name": "send_email", "queue": "default"},
+            )
+            app.post_message(EventReceived(event))
+            await pilot.pause()
+
+            # Check metrics tracker was updated
+            assert app._metrics_tracker.pending == 1
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_multiple_events_update_metrics(self) -> None:
+        """Test multiple events update metrics correctly."""
+        from asynctasq_monitor.tui.event_handler import (
+            EventReceived,
+            TUIEvent,
+            TUIEventType,
+        )
+
+        app = AsyncTasQMonitorTUI()
+        async with app.run_test() as pilot:
+            await pilot.pause()
+
+            # Enqueue 3 tasks
+            for i in range(3):
+                event = TUIEvent(
+                    type=TUIEventType.TASK_ENQUEUED,
+                    data={"task_id": f"task{i}", "task_name": "test", "queue": "default"},
+                )
+                app.post_message(EventReceived(event))
+
+            await pilot.pause()
+            assert app._metrics_tracker.pending == 3
+
+            # Start 2 tasks
+            for i in range(2):
+                event = TUIEvent(
+                    type=TUIEventType.TASK_STARTED,
+                    data={"task_id": f"task{i}", "task_name": "test"},
+                )
+                app.post_message(EventReceived(event))
+
+            await pilot.pause()
+            assert app._metrics_tracker.pending == 1
+            assert app._metrics_tracker.running == 2
+
+            # Complete 1 task
+            event = TUIEvent(
+                type=TUIEventType.TASK_COMPLETED,
+                data={"task_id": "task0", "task_name": "test"},
+            )
+            app.post_message(EventReceived(event))
+
+            await pilot.pause()
+            assert app._metrics_tracker.running == 1
+            assert app._metrics_tracker.completed == 1
