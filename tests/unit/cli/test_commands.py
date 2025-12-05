@@ -8,12 +8,20 @@ Phase 8 of the TUI Development Plan specifies:
 - Environment variable documentation
 """
 
+import re
+
 import pytest
 from typer.testing import CliRunner
 
 from asynctasq_monitor.cli.main import app
 
 runner = CliRunner()
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape sequences from text."""
+    ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
+    return ansi_escape.sub("", text)
 
 
 class TestMainCLI:
@@ -68,11 +76,12 @@ class TestWebSubcommand:
         """Test that 'web --help' shows web-specific options."""
         result = runner.invoke(app, ["web", "--help"])
         assert result.exit_code == 0
-        assert "--port" in result.stdout
-        assert "--host" in result.stdout
-        assert "--reload" in result.stdout
-        assert "--workers" in result.stdout
-        assert "--log-level" in result.stdout
+        output = strip_ansi(result.stdout)
+        assert "--port" in output
+        assert "--host" in output
+        assert "--reload" in output
+        assert "--workers" in output
+        assert "--log-level" in output
 
     @pytest.mark.unit
     def test_web_shows_environment_variables(self) -> None:
@@ -107,9 +116,10 @@ class TestTUISubcommand:
         """Test that 'tui --help' shows TUI-specific options."""
         result = runner.invoke(app, ["tui", "--help"])
         assert result.exit_code == 0
-        assert "--redis-url" in result.stdout
-        assert "--theme" in result.stdout
-        assert "--refresh-rate" in result.stdout
+        output = strip_ansi(result.stdout)
+        assert "--redis-url" in output
+        assert "--theme" in output
+        assert "--refresh-rate" in output
 
     @pytest.mark.unit
     def test_tui_shows_environment_variables(self) -> None:
@@ -136,15 +146,17 @@ class TestTUISubcommand:
         """Test that theme option is properly documented."""
         result = runner.invoke(app, ["tui", "--help"])
         assert result.exit_code == 0
+        output = strip_ansi(result.stdout)
         # Theme should mention dark/light options
-        assert "--theme" in result.stdout
-        assert "dark" in result.stdout.lower() or "light" in result.stdout.lower()
+        assert "--theme" in output
+        assert "dark" in output.lower() or "light" in output.lower()
 
     @pytest.mark.unit
     def test_tui_refresh_rate_bounds(self) -> None:
         """Test that refresh-rate help shows constraints."""
         result = runner.invoke(app, ["tui", "--help"])
         assert result.exit_code == 0
-        assert "--refresh-rate" in result.stdout
+        output = strip_ansi(result.stdout)
+        assert "--refresh-rate" in output
         # The help should indicate this is a number in seconds
-        assert "seconds" in result.stdout.lower() or "rate" in result.stdout.lower()
+        assert "seconds" in output.lower() or "rate" in output.lower()
