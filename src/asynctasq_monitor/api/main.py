@@ -89,6 +89,21 @@ def create_monitoring_app(
         allow_headers=["*"],
     )
 
+    # Middleware to redirect trailing slashes for API routes (all HTTP methods)
+    from starlette.middleware.base import BaseHTTPMiddleware
+    from starlette.responses import RedirectResponse
+
+    class TrailingSlashRedirectMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request, call_next):
+            path = request.url.path
+            # Redirect /api/.../ to /api/... (remove trailing slash)
+            if path.startswith("/api/") and path.endswith("/") and len(path) > 5:
+                new_url = str(request.url).replace(path, path.rstrip("/"))
+                return RedirectResponse(url=new_url, status_code=307)
+            return await call_next(request)
+
+    app.add_middleware(TrailingSlashRedirectMiddleware)
+
     # Include routers; import explicitly using absolute imports.
     try:
         # local import to avoid import-time dependency on optional modules
