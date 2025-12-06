@@ -470,8 +470,73 @@ describe("useTasks", () => {
 			expect(typeof result.current).toBe("function");
 		});
 
-		it("prefetches task data when called", async () => {
+		it("uses cached data from detail cache if available", async () => {
 			const mockTask = createMockTask({ id: "task-123" });
+			const queryClient = createTestQueryClient();
+
+			// Set up spies before any calls
+			const prefetchSpy = vi.spyOn(queryClient, "prefetchQuery");
+			const setDataSpy = vi.spyOn(queryClient, "setQueryData");
+
+			// Pre-populate the detail cache
+			queryClient.setQueryData(taskKeys.detail("task-123"), mockTask);
+
+			const wrapper = ({ children }: { children: ReactNode }) => (
+				<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+			);
+
+			const { result } = renderHook(() => usePrefetchTask(), { wrapper });
+
+			// Clear spy calls from setup
+			prefetchSpy.mockClear();
+			setDataSpy.mockClear();
+
+			// Call the prefetch function
+			result.current("task-123");
+
+			// Should not prefetch or set data since it's already cached
+			expect(prefetchSpy).not.toHaveBeenCalled();
+			expect(setDataSpy).not.toHaveBeenCalled();
+		});
+
+		it("seeds cache from list query data if available", async () => {
+			const mockTask = createMockTask({ id: "task-456" });
+			const queryClient = createTestQueryClient();
+
+			// Set up spies before any calls
+			const prefetchSpy = vi.spyOn(queryClient, "prefetchQuery");
+			const setDataSpy = vi.spyOn(queryClient, "setQueryData");
+
+			// Pre-populate the list cache with the task
+			queryClient.setQueryData(taskKeys.list({}, 50, 0), {
+				items: [mockTask],
+				total: 1,
+				limit: 50,
+				offset: 0,
+			});
+
+			const wrapper = ({ children }: { children: ReactNode }) => (
+				<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+			);
+
+			const { result } = renderHook(() => usePrefetchTask(), { wrapper });
+
+			// Clear spy calls from setup
+			prefetchSpy.mockClear();
+			setDataSpy.mockClear();
+
+			// Call the prefetch function
+			result.current("task-456");
+
+			// Should set query data from list cache, not prefetch from network
+			expect(prefetchSpy).not.toHaveBeenCalled();
+			// setQueryData called once to seed the detail cache
+			expect(setDataSpy).toHaveBeenCalledTimes(1);
+			expect(setDataSpy).toHaveBeenCalledWith(taskKeys.detail("task-456"), mockTask);
+		});
+
+		it("falls back to network prefetch when not in cache", async () => {
+			const mockTask = createMockTask({ id: "task-789" });
 			vi.mocked(api.getTaskById).mockResolvedValue(mockTask);
 
 			const queryClient = createTestQueryClient();
@@ -483,12 +548,12 @@ describe("useTasks", () => {
 
 			const { result } = renderHook(() => usePrefetchTask(), { wrapper });
 
-			// Call the prefetch function
-			result.current("task-123");
+			// Call the prefetch function - task not in any cache
+			result.current("task-789");
 
 			expect(prefetchSpy).toHaveBeenCalledWith(
 				expect.objectContaining({
-					queryKey: taskKeys.detail("task-123"),
+					queryKey: taskKeys.detail("task-789"),
 				}),
 			);
 		});

@@ -273,6 +273,10 @@ export function useBulkDeleteTasks() {
 /**
  * Hook to prefetch task details for improved UX.
  *
+ * Uses cache-first strategy: If task data is already in cache (from list queries),
+ * it seeds the detail cache directly without making a network request.
+ * This prevents 404 errors when using mock/sample data and improves performance.
+ *
  * @example
  * ```tsx
  * const prefetchTask = usePrefetchTask();
@@ -284,7 +288,29 @@ export function usePrefetchTask() {
 	const queryClient = useQueryClient();
 
 	return (taskId: string) => {
-		queryClient.prefetchQuery({
+		// Check if we already have this task in the detail cache
+		const existingData = queryClient.getQueryData<Task>(taskKeys.detail(taskId));
+		if (existingData) {
+			return; // Already cached, no need to prefetch
+		}
+
+		// Try to find the task in any cached list queries
+		const listQueries = queryClient.getQueriesData<PaginatedResponse<Task>>({
+			queryKey: taskKeys.lists(),
+		});
+
+		for (const [, data] of listQueries) {
+			const task = data?.items?.find((t) => t.id === taskId);
+			if (task) {
+				// Seed the detail cache with the task from the list
+				queryClient.setQueryData(taskKeys.detail(taskId), task);
+				return;
+			}
+		}
+
+		// Fall back to network request only if not found in cache
+		// Use void to explicitly ignore the promise (errors are silently discarded by TanStack Query)
+		void queryClient.prefetchQuery({
 			queryKey: taskKeys.detail(taskId),
 			queryFn: () => api.getTaskById(taskId),
 			staleTime: 5_000, // Consider data stale after 5 seconds
