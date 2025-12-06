@@ -4,7 +4,7 @@
 # installation of core + addons.
 [project]
 name = "asynctasq-monitor"
-version = "0.9.0"
+version = "0.9.1"
 description = "Real-time monitoring UI for Async TasQ"
 readme = "README.md"
 requires-python = ">=3.12"
