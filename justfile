@@ -17,7 +17,9 @@ init: install install-frontend setup-hooks
 
 # Install Python package with dev dependencies
 install:
-    uv sync --all-extras --group dev --group local
+    uv sync --all-extras --group dev
+    # Override asynctasq with local checkout for development
+    uv pip install -e ../asynctasq --quiet
 
 # Install frontend dependencies
 install-frontend:
