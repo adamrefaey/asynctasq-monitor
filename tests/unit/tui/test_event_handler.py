@@ -3,8 +3,6 @@
 Tests for the real-time event streaming and metrics tracking functionality.
 """
 
-from __future__ import annotations
-
 from time import monotonic
 from unittest.mock import AsyncMock, MagicMock, patch
 

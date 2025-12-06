@@ -1,7 +1,5 @@
 """Unit tests for the TaskTable widget."""
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 
 import pytest

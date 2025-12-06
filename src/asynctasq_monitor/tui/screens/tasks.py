@@ -4,8 +4,6 @@ This module provides the TasksScreen which displays a filterable
 list of tasks with the ability to view task details.
 """
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 
 from textual import on

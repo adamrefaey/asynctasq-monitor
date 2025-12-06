@@ -1,7 +1,5 @@
 """Unit tests for the QueuesScreen and related widgets."""
 
-from __future__ import annotations
-
 import pytest
 from textual.widgets import Label, Static
 

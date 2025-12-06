@@ -10,8 +10,6 @@ Best Practices (2024-2025):
 - Implements graceful shutdown with cleanup
 """
 
-from __future__ import annotations
-
 import asyncio
 from dataclasses import dataclass
 from enum import Enum

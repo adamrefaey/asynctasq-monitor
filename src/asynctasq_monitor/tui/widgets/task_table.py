@@ -4,8 +4,6 @@ This module provides the TaskTable widget which displays tasks in a
 DataTable with status colors, row selection, and keyboard navigation.
 """
 
-from __future__ import annotations
-
 from rich.text import Text
 from textual.message import Message
 from textual.widgets import DataTable

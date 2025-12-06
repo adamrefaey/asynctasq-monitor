@@ -1,7 +1,5 @@
 """Unit tests for the FilterBar widget."""
 
-from __future__ import annotations
-
 import pytest
 from textual.widgets import Input, Select
 

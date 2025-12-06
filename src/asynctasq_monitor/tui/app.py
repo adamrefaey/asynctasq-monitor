@@ -16,8 +16,6 @@ Best Practices (2024-2025):
     - Thread-safe UI updates via message passing
 """
 
-from __future__ import annotations
-
 import logging
 from pathlib import Path
 from time import monotonic

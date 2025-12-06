@@ -12,8 +12,6 @@ Usage:
     pytest tests/unit/tui/test_snapshots.py --snapshot-update
 """
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 

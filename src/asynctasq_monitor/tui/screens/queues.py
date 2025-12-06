@@ -4,8 +4,6 @@ This module provides the QueuesScreen which displays all queues
 with their health status, pending counts, and throughput metrics.
 """
 
-from __future__ import annotations
-
 from rich.text import Text
 from textual import on
 from textual.app import ComposeResult

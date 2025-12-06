@@ -4,8 +4,6 @@ This module provides the FilterBar widget which contains search input
 and status/queue filter dropdowns.
 """
 
-from __future__ import annotations
-
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Horizontal

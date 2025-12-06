@@ -4,8 +4,6 @@ This module provides the TaskDetailScreen which displays detailed
 information about a single task with action buttons.
 """
 
-from __future__ import annotations
-
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical

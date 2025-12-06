@@ -4,8 +4,6 @@ This module provides the WorkersScreen which shows all workers
 with their status, resource usage, and current tasks.
 """
 
-from __future__ import annotations
-
 from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
