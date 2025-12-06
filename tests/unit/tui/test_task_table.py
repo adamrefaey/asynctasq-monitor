@@ -214,8 +214,8 @@ class TestTaskTable:
             await pilot.pause()
 
             row = table.get_row_at(0)
-            # Worker column (index 4) should be truncated to 8 chars
-            assert len(row[4]) == 8
+            # Worker column (index 4) should be truncated to 8 chars (now returns Text)
+            assert len(str(row[4])) == 8
 
     @pytest.mark.asyncio
     async def test_missing_worker_shows_dash(self) -> None:
@@ -244,7 +244,8 @@ class TestTaskTable:
             await pilot.pause()
 
             row = table.get_row_at(0)
-            assert row[4] == "-"
+            # Now returns Text object
+            assert str(row[4]) == "-"
 
     @pytest.mark.asyncio
     async def test_duration_formatted(self) -> None:
@@ -274,7 +275,8 @@ class TestTaskTable:
             await pilot.pause()
 
             row = table.get_row_at(0)
-            assert row[5] == "1234ms"
+            # Now returns Text object
+            assert str(row[5]) == "1234ms"
 
     @pytest.mark.asyncio
     async def test_missing_duration_shows_dash(self) -> None:
@@ -303,7 +305,52 @@ class TestTaskTable:
             await pilot.pause()
 
             row = table.get_row_at(0)
-            assert row[5] == "-"
+            # Now returns Text object
+            assert str(row[5]) == "-"
+
+    @pytest.mark.asyncio
+    async def test_completed_tasks_sorted_to_bottom(self) -> None:
+        """Test that completed and cancelled tasks are sorted to bottom."""
+        from textual.app import App
+
+        now = datetime.now(UTC)
+        tasks = [
+            Task(
+                id="task-1",
+                name="completed_task",
+                queue="default",
+                status=TaskStatus.COMPLETED,
+                enqueued_at=now,
+            ),
+            Task(
+                id="task-2",
+                name="pending_task",
+                queue="default",
+                status=TaskStatus.PENDING,
+                enqueued_at=now,
+            ),
+            Task(
+                id="task-3",
+                name="cancelled_task",
+                queue="default",
+                status=TaskStatus.CANCELLED,
+                enqueued_at=now,
+            ),
+        ]
+
+        class TestApp(App[None]):
+            def compose(self):
+                yield TaskTable(id="test-table")
+
+        async with TestApp().run_test() as pilot:
+            await pilot.pause()
+            table = pilot.app.query_one("#test-table", TaskTable)
+            table.update_tasks(tasks)
+            await pilot.pause()
+
+            # Check that pending task is first
+            first_row = table.get_row_at(0)
+            assert str(first_row[1]) == "pending_task"
 
     @pytest.mark.asyncio
     async def test_row_selection_posts_message(self) -> None:

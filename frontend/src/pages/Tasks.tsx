@@ -221,9 +221,19 @@ function createTaskColumns(
 					<ArrowUpDown className="h-4 w-4" />
 				</button>
 			),
-			cell: (info) => (
-				<div className="font-medium text-zinc-900 dark:text-zinc-100">{info.getValue()}</div>
-			),
+			cell: (info) => {
+				const task = info.row.original;
+				const isCompleted = task.status === "completed" || task.status === "cancelled";
+				return (
+					<div
+						className={`font-medium text-zinc-900 dark:text-zinc-100 ${
+							isCompleted ? "line-through opacity-60" : ""
+						}`}
+					>
+						{info.getValue()}
+					</div>
+				);
+			},
 		}),
 		columnHelper.accessor("id", {
 			header: "ID",
@@ -470,20 +480,26 @@ export default function TasksPage(): ReactNode {
 											</td>
 										</tr>
 									) : (
-										table.getRowModel().rows.map((row) => (
-											<tr
-												key={row.id}
-												className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 cursor-pointer"
-												onClick={() => setSelectedTaskId(row.original.id)}
-												onMouseEnter={() => prefetchTask(row.original.id)}
-											>
-												{row.getVisibleCells().map((cell) => (
-													<td key={cell.id} className="px-4 py-3 text-sm">
-														{flexRender(cell.column.columnDef.cell, cell.getContext())}
-													</td>
-												))}
-											</tr>
-										))
+										table.getRowModel().rows.map((row) => {
+											const isCompleted =
+												row.original.status === "completed" || row.original.status === "cancelled";
+											return (
+												<tr
+													key={row.id}
+													className={`hover:bg-zinc-50 dark:hover:bg-zinc-900/50 cursor-pointer ${
+														isCompleted ? "opacity-75" : ""
+													}`}
+													onClick={() => setSelectedTaskId(row.original.id)}
+													onMouseEnter={() => prefetchTask(row.original.id)}
+												>
+													{row.getVisibleCells().map((cell) => (
+														<td key={cell.id} className="px-4 py-3 text-sm">
+															{flexRender(cell.column.columnDef.cell, cell.getContext())}
+														</td>
+													))}
+												</tr>
+											);
+										})
 									)}
 								</tbody>
 							</table>

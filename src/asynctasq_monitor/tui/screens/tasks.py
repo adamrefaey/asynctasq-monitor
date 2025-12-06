@@ -4,15 +4,13 @@ This module provides the TasksScreen which displays a filterable
 list of tasks with the ability to view task details.
 """
 
-from datetime import UTC, datetime
-
-from textual import on
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.widgets import Label
 
-from asynctasq_monitor.models.task import Task, TaskStatus
+from asynctasq_monitor.models.task import Task, TaskFilters, TaskStatus
 from asynctasq_monitor.tui.widgets.filter_bar import FilterBar
 from asynctasq_monitor.tui.widgets.task_table import TaskTable
 
@@ -74,73 +72,32 @@ class TasksScreen(Container):
         yield TaskTable(id="task-table")
 
     def on_mount(self) -> None:
-        """Load sample data when mounted."""
-        self._load_sample_data()
+        """Load tasks when mounted."""
+        # Set interval to refresh tasks periodically
+        self.set_interval(2.0, self._refresh_tasks_from_backend)
+        # Initial load
+        self._refresh_tasks_from_backend()
 
-    def _load_sample_data(self) -> None:
-        """Load sample task data for development/demo."""
-        now = datetime.now(UTC)
+    def _refresh_tasks_from_backend(self) -> None:
+        """Fetch tasks from backend asynchronously."""
+        # Start the worker to fetch tasks
+        self._fetch_tasks_worker()
 
-        sample_tasks = [
-            Task(
-                id="abc12345-1234-5678-9abc-def012345678",
-                name="send_email",
-                queue="email",
-                status=TaskStatus.COMPLETED,
-                enqueued_at=now,
-                started_at=now,
-                completed_at=now,
-                duration_ms=234,
-            ),
-            Task(
-                id="def45678-1234-5678-9abc-def012345678",
-                name="process_payment",
-                queue="high",
-                status=TaskStatus.RUNNING,
-                enqueued_at=now,
-                started_at=now,
-                worker_id="worker-1234-abcd",
-            ),
-            Task(
-                id="ghi78901-1234-5678-9abc-def012345678",
-                name="generate_report",
-                queue="report",
-                status=TaskStatus.FAILED,
-                enqueued_at=now,
-                started_at=now,
-                completed_at=now,
-                duration_ms=5000,
-                exception="ReportGenerationError: Failed to fetch data",
-            ),
-            Task(
-                id="jkl01234-1234-5678-9abc-def012345678",
-                name="sync_inventory",
-                queue="default",
-                status=TaskStatus.PENDING,
-                enqueued_at=now,
-            ),
-            Task(
-                id="mno56789-1234-5678-9abc-def012345678",
-                name="send_notification",
-                queue="low",
-                status=TaskStatus.RETRYING,
-                enqueued_at=now,
-                started_at=now,
-                worker_id="worker-5678-efgh",
-                attempt=2,
-                max_retries=3,
-            ),
-            Task(
-                id="pqr23456-1234-5678-9abc-def012345678",
-                name="cleanup_temp_files",
-                queue="default",
-                status=TaskStatus.CANCELLED,
-                enqueued_at=now,
-            ),
-        ]
+    @work(exclusive=False)
+    async def _fetch_tasks_worker(self) -> None:
+        """Fetch tasks and update the UI (worker method)."""
+        try:
+            from asynctasq_monitor.services.task_service import TaskService
 
-        self.tasks = sample_tasks
-        self._update_table()
+            service = TaskService()
+            filters = TaskFilters()
+            tasks, _total = await service.get_tasks(filters, limit=100, offset=0)
+            self.tasks = tasks
+            self._update_table()
+        except Exception:
+            # If backend fetch fails, show empty state
+            # Don't crash the TUI
+            pass
 
     def _update_table(self) -> None:
         """Update the task table with filtered tasks."""

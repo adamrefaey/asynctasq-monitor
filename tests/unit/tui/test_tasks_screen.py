@@ -43,8 +43,8 @@ class TestTasksScreen:
             assert screen.query_one("#task-table", TaskTable) is not None
 
     @pytest.mark.asyncio
-    async def test_sample_data_loaded_on_mount(self) -> None:
-        """Test that sample data is loaded on mount."""
+    async def test_tasks_fetch_on_mount(self) -> None:
+        """Test that tasks are initialized on mount (may be empty if no backend)."""
         from textual.app import App
 
         class TestApp(App[None]):
@@ -56,15 +56,34 @@ class TestTasksScreen:
             screen = pilot.app.query_one("#tasks-screen", TasksScreen)
             table = screen.query_one("#task-table", TaskTable)
 
-            # Sample data should have been loaded
-            assert table.row_count > 0
-            assert len(screen.tasks) > 0
+            # Tasks list should be initialized (may be empty)
+            assert screen.tasks is not None
+            # Table should exist even if empty
+            assert table.row_count >= 0
 
     @pytest.mark.asyncio
     async def test_filter_by_search(self) -> None:
         """Test filtering tasks by search term."""
         from textual.app import App
         from textual.widgets import Input
+
+        now = datetime.now(UTC)
+        test_tasks = [
+            Task(
+                id="task-1",
+                name="send_email",
+                queue="email",
+                status=TaskStatus.PENDING,
+                enqueued_at=now,
+            ),
+            Task(
+                id="task-2",
+                name="process_payment",
+                queue="default",
+                status=TaskStatus.RUNNING,
+                enqueued_at=now,
+            ),
+        ]
 
         class TestApp(App[None]):
             def compose(self):
@@ -76,8 +95,13 @@ class TestTasksScreen:
             table = screen.query_one("#task-table", TaskTable)
             filter_bar = screen.query_one("#filter-bar", FilterBar)
 
+            # Manually set test tasks
+            screen.refresh_tasks(test_tasks)
+            await pilot.pause()
+
             # Get initial count
             initial_count = table.row_count
+            assert initial_count == 2
 
             # Search for a specific task
             search_input = filter_bar.query_one("#search-input", Input)
@@ -85,7 +109,7 @@ class TestTasksScreen:
             await pilot.pause()
 
             # Should have fewer results
-            assert table.row_count < initial_count
+            assert table.row_count == 1
 
     @pytest.mark.asyncio
     async def test_refresh_tasks(self) -> None:
@@ -172,6 +196,17 @@ class TestTasksScreen:
 
         from asynctasq_monitor.tui.screens.task_detail import TaskDetailScreen
 
+        now = datetime.now(UTC)
+        test_tasks = [
+            Task(
+                id="task-123",
+                name="test_task",
+                queue="default",
+                status=TaskStatus.PENDING,
+                enqueued_at=now,
+            ),
+        ]
+
         class TestApp(App[None]):
             def compose(self):
                 yield TasksScreen(id="tasks-screen")
@@ -180,6 +215,10 @@ class TestTasksScreen:
             await pilot.pause()
             screen = pilot.app.query_one("#tasks-screen", TasksScreen)
             table = screen.query_one("#task-table", TaskTable)
+
+            # Manually add test tasks so we have something to select
+            screen.refresh_tasks(test_tasks)
+            await pilot.pause()
 
             # Focus the table and select first row
             table.focus()

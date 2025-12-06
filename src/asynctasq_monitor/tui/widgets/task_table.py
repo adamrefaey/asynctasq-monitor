@@ -72,14 +72,29 @@ class TaskTable(DataTable):
 
         Clears existing rows and populates with new task data.
         Status column is styled with appropriate colors.
+        Completed and cancelled tasks are shown with strikethrough.
 
         Args:
             tasks: List of Task objects to display.
         """
         self.clear()
-        for task in tasks:
+
+        # Sort tasks: incomplete first, then completed/cancelled
+        sorted_tasks = sorted(
+            tasks,
+            key=lambda t: (
+                1 if (t.status == TaskStatus.COMPLETED or t.status == TaskStatus.CANCELLED) else 0,
+                t.enqueued_at,
+            ),
+        )
+
+        for task in sorted_tasks:
             status_value = task.status.value if isinstance(task.status, TaskStatus) else task.status
             color = self.STATUS_COLORS.get(status_value, "white")
+
+            # Apply strikethrough for completed/cancelled tasks
+            is_done = task.status in (TaskStatus.COMPLETED, TaskStatus.CANCELLED)
+            style_suffix = " strike" if is_done else ""
 
             # Format worker ID (truncate if present)
             worker_display = task.worker_id[:8] if task.worker_id else "-"
@@ -88,12 +103,12 @@ class TaskTable(DataTable):
             duration_display = f"{task.duration_ms}ms" if task.duration_ms is not None else "-"
 
             self.add_row(
-                task.id[:8],
-                task.name,
-                task.queue,
-                Text(status_value, style=color),
-                worker_display,
-                duration_display,
+                Text(task.id[:8], style=f"dim{style_suffix}" if is_done else ""),
+                Text(task.name, style=f"dim{style_suffix}" if is_done else ""),
+                Text(task.queue, style=f"dim{style_suffix}" if is_done else ""),
+                Text(status_value, style=f"{color}{style_suffix}"),
+                Text(worker_display, style=f"dim{style_suffix}" if is_done else ""),
+                Text(duration_display, style=f"dim{style_suffix}" if is_done else ""),
                 key=task.id,
             )
 
