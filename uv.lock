@@ -35,19 +35,19 @@ wheels = [
 
 [[package]]
 name = "asynctasq"
-version = "0.9.8"
+version = "0.9.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "msgpack" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f5/ac/0f4521c6ba98f06e4d6a765f6767cc00bb70608be4a91812a7f3ac99fdeb/asynctasq-0.9.8.tar.gz", hash = "sha256:08cb3578dd749bc2cbdf9f7fd8b18a7457c9cd0c93a92da4468ec89520e15f4e", size = 340627, upload-time = "2025-12-06T01:25:56.668Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6d/61/2cdfc2e9baba7ef078c7562d9fb0c12c5e8e4f1639f9a34208f115d3cad3/asynctasq-0.9.10.tar.gz", hash = "sha256:553dec2c3f92cf6854eb4f8f07c3442341bdf692f39c380e4e1924aa76fc1fc9", size = 348356, upload-time = "2025-12-06T20:16:43.878Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5b/24/b183bdf928f4aa2fa9b95c13ab031bf160feff58e68c103447616aa6f0a2/asynctasq-0.9.8-py3-none-any.whl", hash = "sha256:258236565a05d91bb07d9830503ffc3b0a735a8517678a8afa7784fb22a4c65b", size = 78973, upload-time = "2025-12-06T01:25:55.432Z" },
+    { url = "https://files.pythonhosted.org/packages/fa/d2/cf05acc0ad7ea5d72863c004c3ae1ffe220a365716f5e6cc39ba6fdc6405/asynctasq-0.9.10-py3-none-any.whl", hash = "sha256:a24416678120646596cb2c5a126edd4388c83859fb16e383e02d86393e831a22", size = 83803, upload-time = "2025-12-06T20:16:42.546Z" },
 ]
 
 [[package]]
 name = "asynctasq-monitor"
-version = "0.9.1"
+version = "0.9.2"
 source = { editable = "." }
 dependencies = [
     { name = "msgpack" },
@@ -110,7 +110,7 @@ provides-extras = ["web", "tui", "all"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "asynctasq", specifier = ">=0.9.0" },
+    { name = "asynctasq", specifier = ">=0.9.10" },
     { name = "asynctasq-monitor", extras = ["all"] },
     { name = "bandit", specifier = ">=1.9.2" },
     { name = "coverage-badge", specifier = ">=1.1.2" },

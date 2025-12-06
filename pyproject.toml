@@ -4,7 +4,7 @@
 # installation of core + addons.
 [project]
 name = "asynctasq-monitor"
-version = "0.9.1"
+version = "0.9.2"
 description = "Real-time monitoring UI for Async TasQ"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -56,7 +56,7 @@ packages = ["src/asynctasq_monitor"]
 [dependency-groups]
 dev = [
     "asynctasq-monitor[all]",     # Install all optional extras for dev
-    "asynctasq>=0.9.0",           # Install from PyPI (override locally with justfile)
+    "asynctasq>=0.9.10",           # Install from PyPI (override locally with justfile)
     "redis[hiredis]>=7.1.0",      # For event consumer testing
     "pyright>=1.1.407",
     "pytest>=9.0.1",
