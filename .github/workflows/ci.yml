@@ -27,6 +27,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Checkout asynctasq (dev dependency)
+        uses: actions/checkout@v6
+        with:
+          repository: adamrefaey/asynctasq
+          path: ../asynctasq
+          persist-credentials: false
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -142,6 +149,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
+          persist-credentials: false
+
+      - name: Checkout asynctasq (dev dependency)
+        uses: actions/checkout@v6
+        with:
+          repository: adamrefaey/asynctasq
+          path: ../asynctasq
           persist-credentials: false
 
       - name: Set up Python ${{ matrix.python-version }}
@@ -273,6 +287,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
+          persist-credentials: false
+
+      - name: Checkout asynctasq (dev dependency)
+        uses: actions/checkout@v6
+        with:
+          repository: adamrefaey/asynctasq
+          path: ../asynctasq
           persist-credentials: false
 
       - name: Set up Python ${{ matrix.python-version }}
