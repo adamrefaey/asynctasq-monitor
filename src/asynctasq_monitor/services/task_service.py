@@ -117,9 +117,13 @@ class TaskService:
             task_dict = await self._serializer.deserialize(raw_bytes)
 
             # Extract task metadata from the serialized dict
-            task_id = task_dict.get("task_id", "")
-            task_name = task_dict.get("task_name", "")
-            enqueued_at = task_dict.get("enqueued_at")
+            # The task structure has 'metadata' and 'params' at top level
+            metadata = task_dict.get("metadata", {})
+            params = task_dict.get("params", {})
+
+            task_id = metadata.get("task_id", "")
+            task_name = metadata.get("func_name", "")
+            enqueued_at = metadata.get("dispatched_at")
 
             # Handle enqueued_at being already a datetime or needing parsing
             if enqueued_at is None:
@@ -127,7 +131,6 @@ class TaskService:
             elif isinstance(enqueued_at, str):
                 enqueued_at = datetime.fromisoformat(enqueued_at)
 
-            params = task_dict.get("params", {})
             args = params.get("args", [])
             kwargs = params.get("kwargs", {})
 
@@ -139,8 +142,8 @@ class TaskService:
                 enqueued_at=enqueued_at,
                 args=args,
                 kwargs=kwargs,
-                priority=task_dict.get("priority", 0),
-                max_retries=task_dict.get("max_retries", 3),
+                priority=metadata.get("priority", 0),
+                max_retries=metadata.get("max_retries", 3),
             )
         except Exception:
             # If deserialization fails, return None and skip this task

@@ -466,12 +466,14 @@ export default function Workers() {
 			)}
 
 			{/* Worker Detail Modal */}
-			<WorkerDetailModal
-				workerId={selectedWorkerId ?? ""}
-				isOpen={selectedWorkerId !== null}
-				onClose={handleCloseModal}
-				onActionPerformed={handleActionPerformed}
-			/>
+			{selectedWorkerId && (
+				<WorkerDetailModal
+					workerId={selectedWorkerId}
+					isOpen={true}
+					onClose={handleCloseModal}
+					onActionPerformed={handleActionPerformed}
+				/>
+			)}
 		</div>
 	);
 }

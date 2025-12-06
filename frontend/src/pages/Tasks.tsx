@@ -35,6 +35,7 @@ import {
 	Select,
 	SelectItem,
 } from "@/components/ui";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useDeleteTask, usePrefetchTask, useRetryTask, useTasks } from "@/hooks/useTasks";
 import type { Task, TaskFilters, TaskStatus } from "@/lib/types";
 
@@ -324,6 +325,10 @@ export default function TasksPage(): ReactNode {
 	const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
 	const [queueFilter, setQueueFilter] = useState("");
 
+	// Debounce search query to prevent excessive API calls (300ms delay)
+	// This is a best practice for search inputs that trigger server requests
+	const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
 	// Pagination state
 	const [page, setPage] = useState(0);
 	const [pageSize] = useState(50);
@@ -334,14 +339,14 @@ export default function TasksPage(): ReactNode {
 	// Modal state
 	const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-	// Build filters object
+	// Build filters object using debounced search to reduce API calls
 	const filters: Partial<TaskFilters> = useMemo(
 		() => ({
 			status: statusFilter === "all" ? undefined : statusFilter,
 			queue: queueFilter || undefined,
-			search: searchQuery || undefined,
+			search: debouncedSearchQuery || undefined,
 		}),
-		[statusFilter, queueFilter, searchQuery],
+		[statusFilter, queueFilter, debouncedSearchQuery],
 	);
 
 	// Fetch tasks using our custom hook
@@ -371,6 +376,8 @@ export default function TasksPage(): ReactNode {
 	);
 
 	// Table instance
+	// Using getRowId ensures stable row identity during sorting, filtering, and pagination
+	// This is a critical best practice from TanStack Table to prevent selection/state issues
 	const table = useReactTable({
 		data: data?.items ?? [],
 		columns,
@@ -382,6 +389,8 @@ export default function TasksPage(): ReactNode {
 		},
 		manualPagination: true,
 		pageCount: Math.ceil((data?.total ?? 0) / pageSize),
+		// Stable row IDs prevent issues when data order changes
+		getRowId: (row) => row.id,
 	});
 
 	const totalPages = Math.ceil((data?.total ?? 0) / pageSize);

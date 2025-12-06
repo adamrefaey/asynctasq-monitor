@@ -44,17 +44,29 @@ def task_info_to_raw_bytes(task_info: TaskInfo) -> bytes:
     """Convert a TaskInfo to msgpack raw bytes for testing.
 
     This simulates what the dispatcher stores in the queue.
+    The structure matches the real asynctasq serialization format with
+    nested 'metadata' and 'params' dicts.
     """
     task_dict = {
-        "task_id": task_info.id,
-        "task_name": task_info.name,
-        "enqueued_at": task_info.enqueued_at.isoformat() if task_info.enqueued_at else None,
+        "class": "asynctasq.core.task.FunctionTask",
         "params": {
             "args": task_info.args or [],
             "kwargs": task_info.kwargs or {},
+            "queue": task_info.queue,
+            "max_retries": task_info.max_retries,
+            "retry_delay": 1.0,
+            "timeout": None,
         },
-        "priority": task_info.priority,
-        "max_retries": task_info.max_retries,
+        "metadata": {
+            "task_id": task_info.id,
+            "func_name": task_info.name,
+            "dispatched_at": (task_info.enqueued_at.isoformat() if task_info.enqueued_at else None),
+            "queue": task_info.queue,
+            "max_retries": task_info.max_retries,
+            "retry_delay": 1.0,
+            "timeout": None,
+            "attempts": 0,
+        },
     }
     raw_bytes = msgpack.packb(task_dict, use_bin_type=True)
     assert isinstance(raw_bytes, bytes)
@@ -452,7 +464,7 @@ class TestGetTasks:
         assert task.max_retries == 5
         assert task.args == ["arg1", 123]
         assert task.kwargs == {"key": "value"}
-        assert task.priority == 10
+        # Note: priority is not part of the asynctasq serialization format
         # Runtime metadata (duration_ms, worker_id, etc.) are not in raw task bytes
 
 
