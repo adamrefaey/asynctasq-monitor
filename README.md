@@ -3,6 +3,7 @@
 [![Tests](https://raw.githubusercontent.com/adamrefaey/asynctasq-monitor/main/.github/tests.svg)](https://github.com/adamrefaey/asynctasq-monitor/actions/workflows/ci.yml)
 [![Coverage](https://raw.githubusercontent.com/adamrefaey/asynctasq-monitor/main/.github/coverage.svg)](https://raw.githubusercontent.com/adamrefaey/asynctasq-monitor/main/.github/coverage.svg)
 [![Python Version](https://raw.githubusercontent.com/adamrefaey/asynctasq-monitor/main/.github/python-version.svg)](https://www.python.org/downloads/)
+[![PyPI Version](https://img.shields.io/pypi/v/asynctasq-monitor)](https://pypi.org/project/asynctasq-monitor/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Real-time monitoring UI for [asynctasq](https://github.com/adamrefaey/asynctasq) task queues. Available as both a **web dashboard** (browser-based) and a **TUI** (terminal-based) interface.
