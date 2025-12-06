@@ -137,12 +137,20 @@ export const api = {
 	/**
 	 * Get a single task by ID.
 	 */
-	getTaskById: (taskId: string): Promise<Task> => fetchApi<Task>(`/tasks/${taskId}`),
+	getTaskById: (taskId: string): Promise<Task> => {
+		if (!taskId) {
+			return Promise.reject(new ApiError(400, "Task ID is required"));
+		}
+		return fetchApi<Task>(`/tasks/${taskId}`);
+	},
 
 	/**
 	 * Retry a failed task.
 	 */
 	retryTask: async (taskId: string): Promise<void> => {
+		if (!taskId) {
+			throw new ApiError(400, "Task ID is required");
+		}
 		await fetchApi<{ status: string; message: string }>(`/tasks/${taskId}/retry`, {
 			method: "POST",
 		});
@@ -152,6 +160,9 @@ export const api = {
 	 * Delete a task.
 	 */
 	deleteTask: async (taskId: string): Promise<void> => {
+		if (!taskId) {
+			throw new ApiError(400, "Task ID is required");
+		}
 		await fetchApi<{ status: string; message: string }>(`/tasks/${taskId}`, {
 			method: "DELETE",
 		});
@@ -201,13 +212,22 @@ export const api = {
 	/**
 	 * Get a single worker by ID.
 	 */
-	getWorkerById: (workerId: string): Promise<Worker> => fetchApi<Worker>(`/workers/${workerId}`),
+	getWorkerById: (workerId: string): Promise<Worker> => {
+		if (!workerId) {
+			return Promise.reject(new ApiError(400, "Worker ID is required"));
+		}
+		return fetchApi<Worker>(`/workers/${workerId}`);
+	},
 
 	/**
 	 * Get detailed worker information including task history.
 	 */
-	getWorkerDetail: (workerId: string): Promise<WorkerDetail> =>
-		fetchApi<WorkerDetail>(`/workers/${workerId}/detail`),
+	getWorkerDetail: (workerId: string): Promise<WorkerDetail> => {
+		if (!workerId) {
+			return Promise.reject(new ApiError(400, "Worker ID is required"));
+		}
+		return fetchApi<WorkerDetail>(`/workers/${workerId}/detail`);
+	},
 
 	/**
 	 * Perform an action on a worker.
@@ -216,40 +236,59 @@ export const api = {
 		workerId: string,
 		action: WorkerAction,
 		force = false,
-	): Promise<WorkerActionResponse> =>
-		fetchApi<WorkerActionResponse>(`/workers/${workerId}/action`, {
+	): Promise<WorkerActionResponse> => {
+		if (!workerId) {
+			return Promise.reject(new ApiError(400, "Worker ID is required"));
+		}
+		return fetchApi<WorkerActionResponse>(`/workers/${workerId}/action`, {
 			method: "POST",
 			body: JSON.stringify({ action, force }),
-		}),
+		});
+	},
 
 	/**
 	 * Pause a worker (stop accepting new tasks).
 	 */
-	pauseWorker: async (workerId: string): Promise<WorkerActionResponse> =>
-		fetchApi<WorkerActionResponse>(`/workers/${workerId}/pause`, {
+	pauseWorker: async (workerId: string): Promise<WorkerActionResponse> => {
+		if (!workerId) {
+			throw new ApiError(400, "Worker ID is required");
+		}
+		return fetchApi<WorkerActionResponse>(`/workers/${workerId}/pause`, {
 			method: "POST",
-		}),
+		});
+	},
 
 	/**
 	 * Resume a paused worker.
 	 */
-	resumeWorker: async (workerId: string): Promise<WorkerActionResponse> =>
-		fetchApi<WorkerActionResponse>(`/workers/${workerId}/resume`, {
+	resumeWorker: async (workerId: string): Promise<WorkerActionResponse> => {
+		if (!workerId) {
+			throw new ApiError(400, "Worker ID is required");
+		}
+		return fetchApi<WorkerActionResponse>(`/workers/${workerId}/resume`, {
 			method: "POST",
-		}),
+		});
+	},
 
 	/**
 	 * Request graceful shutdown of a worker.
 	 */
-	shutdownWorker: async (workerId: string): Promise<WorkerActionResponse> =>
-		fetchApi<WorkerActionResponse>(`/workers/${workerId}/shutdown`, {
+	shutdownWorker: async (workerId: string): Promise<WorkerActionResponse> => {
+		if (!workerId) {
+			throw new ApiError(400, "Worker ID is required");
+		}
+		return fetchApi<WorkerActionResponse>(`/workers/${workerId}/shutdown`, {
 			method: "POST",
-		}),
+		});
+	},
 
 	/**
 	 * Immediately kill a worker.
 	 */
 	killWorker: async (workerId: string, force = false): Promise<WorkerActionResponse> => {
+		if (!workerId) {
+			throw new ApiError(400, "Worker ID is required");
+		}
 		const params = buildSearchParams({ force });
 		return fetchApi<WorkerActionResponse>(`/workers/${workerId}/kill?${params.toString()}`, {
 			method: "POST",
@@ -268,6 +307,9 @@ export const api = {
 			offset?: number;
 		},
 	): Promise<WorkerLogsResponse> => {
+		if (!workerId) {
+			return Promise.reject(new ApiError(400, "Worker ID is required"));
+		}
 		const params = buildSearchParams({
 			level: options?.level,
 			search: options?.search,

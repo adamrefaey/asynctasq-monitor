@@ -15,6 +15,9 @@ export {
 	useWorkers as useWorkersDashboard,
 } from "./useDashboard";
 
+// Debounce hooks
+export { useDebounce, useDebouncedCallback } from "./useDebounce";
+
 // Keyboard shortcuts hook
 export {
 	type Shortcut,
