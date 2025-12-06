@@ -55,8 +55,8 @@ packages = ["src/asynctasq_monitor"]
 
 [dependency-groups]
 dev = [
-    "asynctasq @ file:///${PROJECT_ROOT}/../asynctasq",
     "asynctasq-monitor[all]",     # Install all optional extras for dev
+    "asynctasq>=0.9.0",           # Install from PyPI for CI
     "redis[hiredis]>=7.1.0",      # For event consumer testing
     "pyright>=1.1.407",
     "pytest>=9.0.1",
@@ -72,6 +72,10 @@ dev = [
     "pip-audit>=2.9.0",
     "coverage-badge>=1.1.2",
     "yamllint>=1.37.1",
+]
+# Use this group locally to develop against local asynctasq checkout
+local = [
+    "asynctasq @ file:///${PROJECT_ROOT}/../asynctasq",
 ]
 
 [tool.ruff]

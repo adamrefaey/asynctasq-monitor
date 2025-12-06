@@ -128,6 +128,9 @@ dev = [
     { name = "ruff" },
     { name = "yamllint" },
 ]
+local = [
+    { name = "asynctasq" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -146,7 +149,7 @@ provides-extras = ["web", "tui", "all"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "asynctasq", directory = "../asynctasq" },
+    { name = "asynctasq", specifier = ">=0.9.0" },
     { name = "asynctasq-monitor", extras = ["all"] },
     { name = "bandit", specifier = ">=1.9.2" },
     { name = "coverage-badge", specifier = ">=1.1.2" },
@@ -164,6 +167,7 @@ dev = [
     { name = "ruff", specifier = ">=0.14.6" },
     { name = "yamllint", specifier = ">=1.37.1" },
 ]
+local = [{ name = "asynctasq", directory = "../asynctasq" }]
 
 [[package]]
 name = "bandit"

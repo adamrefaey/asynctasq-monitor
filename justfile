@@ -17,7 +17,7 @@ init: install install-frontend setup-hooks
 
 # Install Python package with dev dependencies
 install:
-    uv sync --all-extras
+    uv sync --all-extras --group dev --group local
 
 # Install frontend dependencies
 install-frontend:
