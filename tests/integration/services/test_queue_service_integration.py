@@ -22,7 +22,6 @@ import pytest
 import pytest_asyncio
 
 from asynctasq.core.dispatcher import Dispatcher
-from asynctasq.core.models import QueueStats
 from asynctasq.drivers.base_driver import BaseDriver
 from asynctasq_monitor.models.queue import (
     QueueAlertLevel,
@@ -45,15 +44,15 @@ def mock_driver() -> MagicMock:
     driver = MagicMock(spec=BaseDriver)
     driver.get_all_queue_names = AsyncMock(return_value=[])
     driver.get_queue_stats = AsyncMock(
-        return_value=QueueStats(
-            name="test-queue",
-            depth=0,
-            processing=0,
-            completed_total=0,
-            failed_total=0,
-            avg_duration_ms=None,
-            throughput_per_minute=None,
-        )
+        return_value={
+            "name": "test-queue",
+            "depth": 0,
+            "processing": 0,
+            "completed_total": 0,
+            "failed_total": 0,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
     )
     return driver
 
@@ -80,45 +79,45 @@ async def queue_service(mock_dispatcher: MagicMock) -> QueueService:
 
 
 @pytest.fixture
-def sample_queue_stats() -> list[QueueStats]:
-    """Create sample QueueStats for testing multiple queues."""
+def sample_queue_stats() -> list[dict[str, object]]:
+    """Create sample queue stats dicts for testing multiple queues."""
     return [
-        QueueStats(
-            name="emails",
-            depth=42,
-            processing=5,
-            completed_total=15000,
-            failed_total=150,
-            avg_duration_ms=1250.5,
-            throughput_per_minute=45.2,
-        ),
-        QueueStats(
-            name="payments",
-            depth=15,
-            processing=0,
-            completed_total=5000,
-            failed_total=50,
-            avg_duration_ms=2500.0,
-            throughput_per_minute=0.0,
-        ),
-        QueueStats(
-            name="reports",
-            depth=150,  # Warning level
-            processing=2,
-            completed_total=1000,
-            failed_total=25,
-            avg_duration_ms=30000.0,
-            throughput_per_minute=2.5,
-        ),
-        QueueStats(
-            name="notifications",
-            depth=550,  # Critical level
-            processing=10,
-            completed_total=50000,
-            failed_total=500,
-            avg_duration_ms=500.0,
-            throughput_per_minute=120.0,
-        ),
+        {
+            "name": "emails",
+            "depth": 42,
+            "processing": 5,
+            "completed_total": 15000,
+            "failed_total": 150,
+            "avg_duration_ms": 1250.5,
+            "throughput_per_minute": 45.2,
+        },
+        {
+            "name": "payments",
+            "depth": 15,
+            "processing": 0,
+            "completed_total": 5000,
+            "failed_total": 50,
+            "avg_duration_ms": 2500.0,
+            "throughput_per_minute": 0.0,
+        },
+        {
+            "name": "reports",
+            "depth": 150,  # Warning level
+            "processing": 2,
+            "completed_total": 1000,
+            "failed_total": 25,
+            "avg_duration_ms": 30000.0,
+            "throughput_per_minute": 2.5,
+        },
+        {
+            "name": "notifications",
+            "depth": 550,  # Critical level
+            "processing": 10,
+            "completed_total": 50000,
+            "failed_total": 500,
+            "avg_duration_ms": 500.0,
+            "throughput_per_minute": 120.0,
+        },
     ]
 
 
@@ -216,10 +215,10 @@ class TestGetQueues:
         self,
         queue_service: QueueService,
         mock_driver: MagicMock,
-        sample_queue_stats: list[QueueStats],
+        sample_queue_stats: list[dict[str, object]],
     ) -> None:
         """Test get_queues returns all queues from driver."""
-        queue_names = [s.name for s in sample_queue_stats]
+        queue_names = [s["name"] for s in sample_queue_stats]
         mock_driver.get_all_queue_names.return_value = queue_names
         mock_driver.get_queue_stats.side_effect = sample_queue_stats
 
@@ -236,15 +235,15 @@ class TestGetQueues:
     ) -> None:
         """Test that QueueStats are correctly mapped to Queue models."""
         mock_driver.get_all_queue_names.return_value = ["test-queue"]
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="test-queue",
-            depth=100,
-            processing=5,
-            completed_total=1000,
-            failed_total=50,
-            avg_duration_ms=2500.0,
-            throughput_per_minute=10.0,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "test-queue",
+            "depth": 100,
+            "processing": 5,
+            "completed_total": 1000,
+            "failed_total": 50,
+            "avg_duration_ms": 2500.0,
+            "throughput_per_minute": 10.0,
+        }
 
         result = await queue_service.get_queues()
 
@@ -263,10 +262,10 @@ class TestGetQueues:
         self,
         queue_service: QueueService,
         mock_driver: MagicMock,
-        sample_queue_stats: list[QueueStats],
+        sample_queue_stats: list[dict[str, object]],
     ) -> None:
         """Test filtering queues by status."""
-        queue_names = [s.name for s in sample_queue_stats]
+        queue_names = [s["name"] for s in sample_queue_stats]
         mock_driver.get_all_queue_names.return_value = queue_names
         mock_driver.get_queue_stats.side_effect = sample_queue_stats
 
@@ -282,10 +281,10 @@ class TestGetQueues:
         self,
         queue_service: QueueService,
         mock_driver: MagicMock,
-        sample_queue_stats: list[QueueStats],
+        sample_queue_stats: list[dict[str, object]],
     ) -> None:
         """Test filtering queues by search term."""
-        queue_names = [s.name for s in sample_queue_stats]
+        queue_names = [s["name"] for s in sample_queue_stats]
         mock_driver.get_all_queue_names.return_value = queue_names
         mock_driver.get_queue_stats.side_effect = sample_queue_stats
 
@@ -299,10 +298,10 @@ class TestGetQueues:
         self,
         queue_service: QueueService,
         mock_driver: MagicMock,
-        sample_queue_stats: list[QueueStats],
+        sample_queue_stats: list[dict[str, object]],
     ) -> None:
         """Test that search filter is case-insensitive."""
-        queue_names = [s.name for s in sample_queue_stats]
+        queue_names = [s["name"] for s in sample_queue_stats]
         mock_driver.get_all_queue_names.return_value = queue_names
         mock_driver.get_queue_stats.side_effect = sample_queue_stats
 
@@ -316,10 +315,10 @@ class TestGetQueues:
         self,
         queue_service: QueueService,
         mock_driver: MagicMock,
-        sample_queue_stats: list[QueueStats],
+        sample_queue_stats: list[dict[str, object]],
     ) -> None:
         """Test filtering queues by minimum depth."""
-        queue_names = [s.name for s in sample_queue_stats]
+        queue_names = [s["name"] for s in sample_queue_stats]
         mock_driver.get_all_queue_names.return_value = queue_names
         mock_driver.get_queue_stats.side_effect = sample_queue_stats
 
@@ -334,10 +333,10 @@ class TestGetQueues:
         self,
         queue_service: QueueService,
         mock_driver: MagicMock,
-        sample_queue_stats: list[QueueStats],
+        sample_queue_stats: list[dict[str, object]],
     ) -> None:
         """Test filtering queues by alert level."""
-        queue_names = [s.name for s in sample_queue_stats]
+        queue_names = [s["name"] for s in sample_queue_stats]
         mock_driver.get_all_queue_names.return_value = queue_names
         mock_driver.get_queue_stats.side_effect = sample_queue_stats
 
@@ -352,10 +351,10 @@ class TestGetQueues:
         self,
         queue_service: QueueService,
         mock_driver: MagicMock,
-        sample_queue_stats: list[QueueStats],
+        sample_queue_stats: list[dict[str, object]],
     ) -> None:
         """Test applying multiple filters simultaneously."""
-        queue_names = [s.name for s in sample_queue_stats]
+        queue_names = [s["name"] for s in sample_queue_stats]
         mock_driver.get_all_queue_names.return_value = queue_names
         mock_driver.get_queue_stats.side_effect = sample_queue_stats
 
@@ -391,15 +390,15 @@ class TestGetQueueByName:
         mock_driver: MagicMock,
     ) -> None:
         """Test getting a queue by name returns the queue."""
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="emails",
-            depth=42,
-            processing=5,
-            completed_total=15000,
-            failed_total=150,
-            avg_duration_ms=1250.5,
-            throughput_per_minute=45.2,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "emails",
+            "depth": 42,
+            "processing": 5,
+            "completed_total": 15000,
+            "failed_total": 150,
+            "avg_duration_ms": 1250.5,
+            "throughput_per_minute": 45.2,
+        }
 
         result = await queue_service.get_queue_by_name("emails")
 
@@ -458,13 +457,15 @@ class TestPauseQueue:
         mock_driver: MagicMock,
     ) -> None:
         """Test pausing a queue returns success response."""
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="emails",
-            depth=42,
-            processing=5,
-            completed_total=100,
-            failed_total=5,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "emails",
+            "depth": 42,
+            "processing": 5,
+            "completed_total": 100,
+            "failed_total": 5,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
 
         result = await queue_service.pause_queue("emails")
 
@@ -479,13 +480,15 @@ class TestPauseQueue:
         mock_driver: MagicMock,
     ) -> None:
         """Test pause reason is included in the message."""
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="emails",
-            depth=42,
-            processing=5,
-            completed_total=100,
-            failed_total=5,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "emails",
+            "depth": 42,
+            "processing": 5,
+            "completed_total": 100,
+            "failed_total": 5,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
 
         result = await queue_service.pause_queue("emails", reason="Maintenance window")
 
@@ -533,13 +536,15 @@ class TestResumeQueue:
         mock_driver: MagicMock,
     ) -> None:
         """Test resuming a queue returns success response."""
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="emails",
-            depth=42,
-            processing=5,
-            completed_total=100,
-            failed_total=5,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "emails",
+            "depth": 42,
+            "processing": 5,
+            "completed_total": 100,
+            "failed_total": 5,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
 
         result = await queue_service.resume_queue("emails")
 
@@ -589,13 +594,15 @@ class TestClearQueue:
         mock_driver: MagicMock,
     ) -> None:
         """Test clearing a queue returns success with task count."""
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="emails",
-            depth=42,
-            processing=5,
-            completed_total=100,
-            failed_total=5,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "emails",
+            "depth": 42,
+            "processing": 5,
+            "completed_total": 100,
+            "failed_total": 5,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
 
         result = await queue_service.clear_queue("emails")
 
@@ -610,13 +617,15 @@ class TestClearQueue:
         mock_driver: MagicMock,
     ) -> None:
         """Test clearing an empty queue returns 0 tasks cleared."""
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="empty-queue",
-            depth=0,
-            processing=0,
-            completed_total=100,
-            failed_total=5,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "empty-queue",
+            "depth": 0,
+            "processing": 0,
+            "completed_total": 100,
+            "failed_total": 5,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
 
         result = await queue_service.clear_queue("empty-queue")
 
@@ -714,13 +723,15 @@ class TestQueueAlertLevels:
     ) -> None:
         """Test queue with depth < 100 has normal alert level."""
         mock_driver.get_all_queue_names.return_value = ["small-queue"]
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="small-queue",
-            depth=50,
-            processing=0,
-            completed_total=100,
-            failed_total=5,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "small-queue",
+            "depth": 50,
+            "processing": 0,
+            "completed_total": 100,
+            "failed_total": 5,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
 
         result = await queue_service.get_queues()
 
@@ -734,13 +745,15 @@ class TestQueueAlertLevels:
     ) -> None:
         """Test queue with 100 <= depth < 500 has warning alert level."""
         mock_driver.get_all_queue_names.return_value = ["medium-queue"]
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="medium-queue",
-            depth=250,
-            processing=0,
-            completed_total=100,
-            failed_total=5,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "medium-queue",
+            "depth": 250,
+            "processing": 0,
+            "completed_total": 100,
+            "failed_total": 5,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
 
         result = await queue_service.get_queues()
 
@@ -754,13 +767,15 @@ class TestQueueAlertLevels:
     ) -> None:
         """Test queue with depth >= 500 has critical alert level."""
         mock_driver.get_all_queue_names.return_value = ["large-queue"]
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="large-queue",
-            depth=750,
-            processing=0,
-            completed_total=100,
-            failed_total=5,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "large-queue",
+            "depth": 750,
+            "processing": 0,
+            "completed_total": 100,
+            "failed_total": 5,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
 
         result = await queue_service.get_queues()
 
@@ -786,8 +801,24 @@ class TestEdgeCases:
         mock_driver.get_all_queue_names.return_value = ["queue1", "queue2"]
 
         # First succeeds, second fails, then succeeds
-        stats1 = QueueStats(name="queue1", depth=10, processing=0)
-        stats2 = QueueStats(name="queue2", depth=20, processing=0)
+        stats1 = {
+            "name": "queue1",
+            "depth": 10,
+            "processing": 0,
+            "completed_total": 0,
+            "failed_total": 0,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
+        stats2 = {
+            "name": "queue2",
+            "depth": 20,
+            "processing": 0,
+            "completed_total": 0,
+            "failed_total": 0,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
         mock_driver.get_queue_stats.side_effect = [stats1, stats2]
 
         result = await queue_service.get_queues()
@@ -802,13 +833,15 @@ class TestEdgeCases:
     ) -> None:
         """Test queue with zero depth and processing is handled correctly."""
         mock_driver.get_all_queue_names.return_value = ["idle-queue"]
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="idle-queue",
-            depth=0,
-            processing=0,
-            completed_total=1000,
-            failed_total=50,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "idle-queue",
+            "depth": 0,
+            "processing": 0,
+            "completed_total": 1000,
+            "failed_total": 50,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
 
         result = await queue_service.get_queues()
 
@@ -824,15 +857,15 @@ class TestEdgeCases:
     ) -> None:
         """Test queue with None optional metrics is handled correctly."""
         mock_driver.get_all_queue_names.return_value = ["new-queue"]
-        mock_driver.get_queue_stats.return_value = QueueStats(
-            name="new-queue",
-            depth=5,
-            processing=1,
-            completed_total=0,
-            failed_total=0,
-            avg_duration_ms=None,
-            throughput_per_minute=None,
-        )
+        mock_driver.get_queue_stats.return_value = {
+            "name": "new-queue",
+            "depth": 5,
+            "processing": 1,
+            "completed_total": 0,
+            "failed_total": 0,
+            "avg_duration_ms": None,
+            "throughput_per_minute": None,
+        }
 
         result = await queue_service.get_queues()
 
@@ -854,12 +887,12 @@ class TestEdgeCases:
         self,
         queue_service: QueueService,
         mock_driver: MagicMock,
-        sample_queue_stats: list[QueueStats],
+        sample_queue_stats: list[dict[str, object]],
         search_term: str,
         expected_count: int,
     ) -> None:
         """Test various search filter patterns."""
-        queue_names = [s.name for s in sample_queue_stats]
+        queue_names = [s["name"] for s in sample_queue_stats]
         mock_driver.get_all_queue_names.return_value = queue_names
         mock_driver.get_queue_stats.side_effect = sample_queue_stats
 
@@ -882,12 +915,12 @@ class TestEdgeCases:
         self,
         queue_service: QueueService,
         mock_driver: MagicMock,
-        sample_queue_stats: list[QueueStats],
+        sample_queue_stats: list[dict[str, object]],
         min_depth: int,
         expected_count: int,
     ) -> None:
         """Test various min_depth filter thresholds."""
-        queue_names = [s.name for s in sample_queue_stats]
+        queue_names = [s["name"] for s in sample_queue_stats]
         mock_driver.get_all_queue_names.return_value = queue_names
         mock_driver.get_queue_stats.side_effect = sample_queue_stats
 
