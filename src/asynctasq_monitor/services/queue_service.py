@@ -61,15 +61,15 @@ class QueueService:
         for name in queue_names:
             stats = await self._driver.get_queue_stats(name)
             queue = Queue(
-                name=stats.name,
+                name=stats["name"],
                 status=QueueStatus.ACTIVE,  # TODO: Get from driver when supported
-                depth=stats.depth,
-                processing=stats.processing,
-                completed_total=stats.completed_total,
-                failed_total=stats.failed_total,
+                depth=stats["depth"],
+                processing=stats["processing"],
+                completed_total=stats["completed_total"],
+                failed_total=stats["failed_total"],
                 workers_assigned=0,  # TODO: Get from worker registry
-                avg_duration_ms=stats.avg_duration_ms,
-                throughput_per_minute=stats.throughput_per_minute,
+                avg_duration_ms=stats["avg_duration_ms"],
+                throughput_per_minute=stats["throughput_per_minute"],
                 priority=0,
                 max_retries=3,
                 created_at=None,
@@ -108,15 +108,15 @@ class QueueService:
         try:
             stats = await self._driver.get_queue_stats(queue_name)
             return Queue(
-                name=stats.name,
+                name=stats["name"],
                 status=QueueStatus.ACTIVE,
-                depth=stats.depth,
-                processing=stats.processing,
-                completed_total=stats.completed_total,
-                failed_total=stats.failed_total,
+                depth=stats["depth"],
+                processing=stats["processing"],
+                completed_total=stats["completed_total"],
+                failed_total=stats["failed_total"],
                 workers_assigned=0,
-                avg_duration_ms=stats.avg_duration_ms,
-                throughput_per_minute=stats.throughput_per_minute,
+                avg_duration_ms=stats["avg_duration_ms"],
+                throughput_per_minute=stats["throughput_per_minute"],
                 priority=0,
                 max_retries=3,
                 created_at=None,

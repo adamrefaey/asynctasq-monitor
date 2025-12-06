@@ -169,13 +169,13 @@ class MetricsCollector:
             for queue_name in queue_names:
                 try:
                     queue_stats = await driver.get_queue_stats(queue_name)
-                    queue_depths[queue_name] = queue_stats.depth
+                    queue_depths[queue_name] = queue_stats["depth"]
                 except Exception:
                     logger.debug("Could not get stats for queue: %s", queue_name)
 
             # Collect worker stats
             worker_stats = await driver.get_worker_stats()
-            active_workers = sum(1 for w in worker_stats if w.status == "active")
+            active_workers = sum(1 for w in worker_stats if w["status"] == "active")
 
             # Calculate success rate
             total_completed = global_stats.get("completed", 0) + global_stats.get("failed", 0)
