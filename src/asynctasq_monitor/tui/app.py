@@ -218,14 +218,19 @@ class AsyncTasQMonitorTUI(App[None]):
     def _handle_task_event(self, event: TUIEvent) -> None:
         """Handle task-related events.
 
-        Updates the tasks table with the new task state.
+        Notifies the tasks screen to refresh its data when task events occur.
+        This ensures the task list stays in sync with real-time events.
 
         Args:
             event: The task event.
         """
-        # Future: Update tasks table with new task data
-        # This would require fetching task details or maintaining local cache
-        pass
+        try:
+            # Notify tasks screen to refresh on task events
+            tasks_screen = self.query_one("#tasks-screen", TasksScreen)
+            # Trigger a refresh of the task list
+            tasks_screen._refresh_tasks_from_backend()
+        except Exception:
+            pass  # Tasks screen not mounted
 
     def _handle_worker_event(self, event: TUIEvent) -> None:
         """Handle worker-related events.
@@ -247,48 +252,59 @@ class AsyncTasQMonitorTUI(App[None]):
         try:
             dashboard = self.query_one("#dashboard-screen", DashboardScreen)
 
-            # Format activity message based on event type
+            # Format activity message based on event type with timestamp
+            from datetime import datetime
+
+            timestamp = datetime.now().strftime("%H:%M:%S")
             activity_lines: list[str] = []
+
             match event.type:
                 case TUIEventType.TASK_ENQUEUED:
-                    activity_lines.append(f"📥 Task enqueued: {event.task_name} → {event.queue}")
+                    task_name = event.task_name or "unknown"
+                    queue = event.queue or "default"
+                    activity_lines.append(f"[{timestamp}]  {task_name} -> {queue}")
                 case TUIEventType.TASK_STARTED:
-                    activity_lines.append(
-                        f"▶️  Task started: {event.task_name} (worker: {event.worker_id})"
-                    )
+                    task_name = event.task_name or "unknown"
+                    worker = (event.worker_id or "?")[:8]
+                    activity_lines.append(f"[{timestamp}]  {task_name} @ {worker}")
                 case TUIEventType.TASK_COMPLETED:
+                    task_name = event.task_name or "unknown"
                     duration_ms = event.data.get("duration_ms")
-                    duration_str = f" in {duration_ms}ms" if duration_ms else ""
-                    activity_lines.append(f"✅ Task completed: {event.task_name}{duration_str}")
+                    duration_str = f" ({duration_ms}ms)" if duration_ms else ""
+                    activity_lines.append(f"[{timestamp}]  {task_name}{duration_str}")
                 case TUIEventType.TASK_FAILED:
-                    error = event.data.get("error", "Unknown error")
-                    # Truncate long errors
-                    if len(error) > 50:
-                        error = error[:47] + "..."
-                    activity_lines.append(f"❌ Task failed: {event.task_name} - {error}")
+                    task_name = event.task_name or "unknown"
+                    error = event.data.get("error", "error")
+                    if len(error) > 30:
+                        error = error[:27] + "..."
+                    activity_lines.append(f"[{timestamp}]  {task_name}: {error}")
                 case TUIEventType.TASK_RETRYING:
+                    task_name = event.task_name or "unknown"
                     attempt = event.data.get("attempt", 1)
-                    activity_lines.append(
-                        f"🔄 Task retrying: {event.task_name} (attempt {attempt})"
-                    )
+                    activity_lines.append(f"[{timestamp}]  {task_name} (#{attempt})")
                 case TUIEventType.WORKER_ONLINE:
-                    activity_lines.append(f"🟢 Worker online: {event.worker_id}")
+                    worker = (event.worker_id or "?")[:12]
+                    activity_lines.append(f"[{timestamp}]  Worker {worker}")
                 case TUIEventType.WORKER_OFFLINE:
-                    activity_lines.append(f"🔴 Worker offline: {event.worker_id}")
+                    worker = (event.worker_id or "?")[:12]
+                    activity_lines.append(f"[{timestamp}]  Worker {worker}")
 
             if activity_lines:
                 # Get current activity widget
-                activity_widget = dashboard.query_one("#recent-activity")
-                current_text = str(activity_widget.render())
-                if current_text == "No recent activity":
-                    current_text = ""
+                try:
+                    activity_widget = dashboard.query_one("#activity-log")
+                    current_text = str(activity_widget.render())
+                    if current_text in ("Waiting for events...", "No recent activity"):
+                        current_text = ""
 
-                # Keep last 10 activity lines
-                current_lines = current_text.split("\n") if current_text else []
-                new_lines = activity_lines + current_lines
-                new_lines = new_lines[:10]
+                    # Keep last 15 activity lines for better visibility
+                    current_lines = [line for line in current_text.split("\n") if line.strip()]
+                    new_lines = activity_lines + current_lines
+                    new_lines = new_lines[:15]
 
-                dashboard.update_activity("\n".join(new_lines))
+                    dashboard.update_activity("\n".join(new_lines))
+                except Exception:
+                    pass
 
         except Exception:
             pass  # Dashboard not mounted
@@ -296,14 +312,16 @@ class AsyncTasQMonitorTUI(App[None]):
     def watch_is_connected(self, connected: bool) -> None:
         """Update UI when connection status changes.
 
+        Updates the header subtitle to show connection status with
+        clear visual indicators.
+
         Args:
             connected: Whether connected to Redis.
         """
-        # Could update a status indicator in the header/footer
         if connected:
-            self.sub_title = "🟢 Connected"
+            self.sub_title = "Connected to Redis"
         else:
-            self.sub_title = "🔴 Disconnected"
+            self.sub_title = "Disconnected"
 
     def action_switch_tab(self, tab_id: str) -> None:
         """Switch to the specified tab.

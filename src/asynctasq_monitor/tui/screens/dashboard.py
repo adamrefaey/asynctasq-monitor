@@ -2,10 +2,15 @@
 
 This module provides the DashboardScreen which displays an overview
 of task queue metrics, throughput charts, and recent activity.
+
+Design Principles (2024-2025 Best Practices):
+- Clear visual hierarchy with semantic colors
+- Responsive layout using fractional units
+- Real-time updates via reactive attributes
 """
 
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal
+from textual.containers import Container, Horizontal, VerticalScroll
 from textual.reactive import reactive
 from textual.widgets import Label, Sparkline, Static
 
@@ -28,61 +33,21 @@ class DashboardScreen(Container):
     # Throughput data for sparkline
     throughput_data: reactive[list[float]] = reactive(list, recompose=False)
 
-    DEFAULT_CSS = """
-    DashboardScreen {
-        height: 100%;
-        padding: 1;
-    }
-
-    #metrics-row {
-        height: 8;
-        margin: 1 0;
-    }
-
-    .section-title {
-        margin: 1 0 0 1;
-        text-style: bold;
-        color: $text;
-    }
-
-    #throughput-container {
-        height: 8;
-        margin: 0 1;
-        padding: 1;
-        background: $panel;
-        border: solid $primary-darken-2;
-    }
-
-    #throughput-sparkline {
-        width: 100%;
-        height: 100%;
-    }
-
-    #recent-activity {
-        margin: 0 1;
-        padding: 1;
-        height: 1fr;
-        background: $panel;
-        border: solid $primary-darken-2;
-    }
-    """
-
     def compose(self) -> ComposeResult:
         """Compose the dashboard UI."""
-        yield Label("📊 Overview", classes="section-title")
-
         with Horizontal(id="metrics-row"):
-            yield MetricCard("Pending", "pending", variant="warning")
-            yield MetricCard("Running", "running", variant="accent")
-            yield MetricCard("Completed", "completed", variant="success")
-            yield MetricCard("Failed", "failed", variant="error")
+            yield MetricCard("Pending", "pending", variant="warning", icon="")
+            yield MetricCard("Running", "running", variant="accent", icon="")
+            yield MetricCard("Completed", "completed", variant="success", icon="")
+            yield MetricCard("Failed", "failed", variant="error", icon="")
 
-        yield Label("📈 Throughput (tasks/min)", classes="section-title")
         with Container(id="throughput-container"):
+            yield Label("Throughput (tasks/min)", classes="container-title")
             yield Sparkline([], id="throughput-sparkline")
 
-        yield Label("🔄 Recent Activity", classes="section-title")
-        yield Static("No recent activity", id="recent-activity")
+        with VerticalScroll(id="recent-activity"):
+            yield Label("Recent Activity", classes="container-title")
+            yield Static("Waiting for events...", id="activity-log", classes="activity-log")
 
     def watch_pending_count(self, value: int) -> None:
         """Update pending metric card when count changes."""
@@ -163,7 +128,7 @@ class DashboardScreen(Container):
             activity_text: Text to display in the activity section.
         """
         try:
-            activity = self.query_one("#recent-activity", Static)
+            activity = self.query_one("#activity-log", Static)
             activity.update(activity_text)
         except Exception:
             pass

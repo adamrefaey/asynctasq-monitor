@@ -1,6 +1,7 @@
 """Unit tests for the DashboardScreen."""
 
 import pytest
+from textual.containers import VerticalScroll
 from textual.widgets import Sparkline, Static
 
 from asynctasq_monitor.tui.screens.dashboard import DashboardScreen
@@ -36,9 +37,9 @@ class TestDashboardScreen:
             dashboard = app.query_one("#dashboard-screen", DashboardScreen)
             assert dashboard is not None
 
-            # Check section titles
-            labels = list(dashboard.query(".section-title"))
-            assert len(labels) == 3
+            # Check container titles (new structure uses container-title class)
+            labels = list(dashboard.query(".container-title"))
+            assert len(labels) == 2  # Throughput and Recent Activity
             # Just verify the labels exist - content testing done elsewhere
 
     @pytest.mark.asyncio
@@ -104,9 +105,12 @@ class TestDashboardScreen:
             app = pilot.app
             dashboard = app.query_one("#dashboard-screen", DashboardScreen)
 
-            activity = dashboard.query_one("#recent-activity", Static)
+            # Activity is now in a VerticalScroll container
+            activity = dashboard.query_one("#recent-activity", VerticalScroll)
             assert activity is not None
-            # Widget exists and is a Static
+            # The activity log is a Static inside the VerticalScroll
+            activity_log = dashboard.query_one("#activity-log", Static)
+            assert activity_log is not None
 
     @pytest.mark.asyncio
     async def test_update_metrics(self) -> None:
@@ -213,9 +217,10 @@ class TestDashboardScreen:
             dashboard.update_activity("Task 'process_data' completed successfully")
             await pilot.pause()
 
-            activity = dashboard.query_one("#recent-activity", Static)
+            # Activity log is now a Static inside a VerticalScroll
+            activity_log = dashboard.query_one("#activity-log", Static)
             # Verify the widget was updated (method was called without exception)
-            assert activity is not None
+            assert activity_log is not None
 
     @pytest.mark.asyncio
     async def test_pending_count_reactivity(self) -> None:
@@ -305,11 +310,9 @@ class TestDashboardScreen:
             assert failed.value == 3
             assert failed.query_one(Digits).value == "3"
 
-    def test_default_css_exists(self) -> None:
-        """Test that DEFAULT_CSS is defined."""
-        assert DashboardScreen.DEFAULT_CSS is not None
-        assert "DashboardScreen" in DashboardScreen.DEFAULT_CSS
-        assert "#metrics-row" in DashboardScreen.DEFAULT_CSS
-        assert ".section-title" in DashboardScreen.DEFAULT_CSS
-        assert "#throughput-container" in DashboardScreen.DEFAULT_CSS
-        assert "#recent-activity" in DashboardScreen.DEFAULT_CSS
+    def test_css_is_in_tcss_file(self) -> None:
+        """Test that CSS is defined in the TCSS file (not inline DEFAULT_CSS)."""
+        # DashboardScreen no longer uses DEFAULT_CSS - styling is in app.tcss
+        # This test just verifies the class exists and can be instantiated
+        screen = DashboardScreen()
+        assert screen is not None

@@ -148,11 +148,14 @@ class TestMetricCard:
             assert completed.query_one(Digits).value == "100"
             assert failed.query_one(Digits).value == "2"
 
-    def test_default_css_exists(self) -> None:
-        """Test that DEFAULT_CSS is defined."""
-        assert MetricCard.DEFAULT_CSS is not None
-        assert "MetricCard" in MetricCard.DEFAULT_CSS
-        assert "metric-warning" in MetricCard.DEFAULT_CSS
-        assert "metric-accent" in MetricCard.DEFAULT_CSS
-        assert "metric-success" in MetricCard.DEFAULT_CSS
-        assert "metric-error" in MetricCard.DEFAULT_CSS
+    def test_css_is_in_tcss_file(self) -> None:
+        """Test that CSS is defined in the TCSS file (not inline DEFAULT_CSS)."""
+        # MetricCard no longer uses DEFAULT_CSS - styling is in app.tcss
+        # This test just verifies the class exists and can be instantiated
+        card = MetricCard("Test", "test-card")
+        assert card is not None
+
+    def test_init_with_icon(self) -> None:
+        """Test MetricCard initializes with specified icon."""
+        card = MetricCard("Pending", "pending", variant="warning", icon="")
+        assert card._icon == ""

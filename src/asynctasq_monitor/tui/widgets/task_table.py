@@ -2,6 +2,11 @@
 
 This module provides the TaskTable widget which displays tasks in a
 DataTable with status colors, row selection, and keyboard navigation.
+
+Design Principles (2024-2025 Best Practices):
+- Semantic status colors for clear visual feedback
+- Status icons for quick recognition
+- Zebra striping for readability
 """
 
 from rich.text import Text
@@ -12,10 +17,11 @@ from asynctasq_monitor.models.task import Task, TaskStatus
 
 
 class TaskTable(DataTable):
-    """DataTable for displaying tasks with status colors.
+    """DataTable for displaying tasks with status colors and icons.
 
     The table shows task ID, name, queue, status, worker, and duration.
-    Rows are styled with colors based on task status.
+    Rows are styled with colors based on task status, with icons for
+    quick visual recognition.
 
     Events:
         TaskSelected: Emitted when a task row is selected (Enter pressed).
@@ -25,13 +31,14 @@ class TaskTable(DataTable):
         >>> table.update_tasks(tasks)  # Update with list of Task objects
     """
 
-    STATUS_COLORS: dict[str, str] = {
-        "pending": "yellow",
-        "running": "cyan",
-        "completed": "green",
-        "failed": "red",
-        "retrying": "orange1",
-        "cancelled": "dim",
+    # Status colors and icons for visual feedback
+    STATUS_STYLES: dict[str, tuple[str, str]] = {
+        "pending": ("yellow", ""),
+        "running": ("cyan", ""),
+        "completed": ("green", ""),
+        "failed": ("red", ""),
+        "retrying": ("orange1", ""),
+        "cancelled": ("dim", ""),
     }
 
     class TaskSelected(Message):
@@ -71,44 +78,62 @@ class TaskTable(DataTable):
         """Update the table with task data.
 
         Clears existing rows and populates with new task data.
-        Status column is styled with appropriate colors.
-        Completed and cancelled tasks are shown with strikethrough.
+        Status column is styled with appropriate colors and icons.
+        Completed and cancelled tasks are shown with dimmed styling.
 
         Args:
             tasks: List of Task objects to display.
         """
         self.clear()
 
-        # Sort tasks: incomplete first, then completed/cancelled
+        # Sort tasks: incomplete first (by status priority), then by enqueued time
+        status_priority = {
+            TaskStatus.RUNNING: 0,
+            TaskStatus.RETRYING: 1,
+            TaskStatus.PENDING: 2,
+            TaskStatus.FAILED: 3,
+            TaskStatus.COMPLETED: 4,
+            TaskStatus.CANCELLED: 5,
+        }
+
         sorted_tasks = sorted(
             tasks,
             key=lambda t: (
-                1 if (t.status == TaskStatus.COMPLETED or t.status == TaskStatus.CANCELLED) else 0,
+                status_priority.get(t.status, 99),
                 t.enqueued_at,
             ),
         )
 
         for task in sorted_tasks:
             status_value = task.status.value if isinstance(task.status, TaskStatus) else task.status
-            color = self.STATUS_COLORS.get(status_value, "white")
+            color, icon = self.STATUS_STYLES.get(status_value, ("white", ""))
 
-            # Apply strikethrough for completed/cancelled tasks
+            # Apply dim styling for completed/cancelled tasks
             is_done = task.status in (TaskStatus.COMPLETED, TaskStatus.CANCELLED)
-            style_suffix = " strike" if is_done else ""
+            base_style = "dim" if is_done else ""
 
             # Format worker ID (truncate if present)
             worker_display = task.worker_id[:8] if task.worker_id else "-"
 
-            # Format duration
-            duration_display = f"{task.duration_ms}ms" if task.duration_ms is not None else "-"
+            # Format duration with appropriate unit
+            if task.duration_ms is not None:
+                if task.duration_ms >= 1000:
+                    duration_display = f"{task.duration_ms / 1000:.1f}s"
+                else:
+                    duration_display = f"{task.duration_ms}ms"
+            else:
+                duration_display = "-"
+
+            # Status with icon
+            status_display = f"{icon} {status_value}"
 
             self.add_row(
-                Text(task.id[:8], style=f"dim{style_suffix}" if is_done else ""),
-                Text(task.name, style=f"dim{style_suffix}" if is_done else ""),
-                Text(task.queue, style=f"dim{style_suffix}" if is_done else ""),
-                Text(status_value, style=f"{color}{style_suffix}"),
-                Text(worker_display, style=f"dim{style_suffix}" if is_done else ""),
-                Text(duration_display, style=f"dim{style_suffix}" if is_done else ""),
+                Text(task.id[:8], style=base_style or "dim"),
+                Text(task.name, style=base_style),
+                Text(task.queue, style=f"{base_style} italic" if base_style else "italic"),
+                Text(status_display, style=f"{color} bold" if not is_done else f"{color}"),
+                Text(worker_display, style=base_style or "dim"),
+                Text(duration_display, style=base_style),
                 key=task.id,
             )
 

@@ -12,10 +12,13 @@ from asynctasq_monitor.tui.widgets.task_table import TaskTable
 class TestTaskTable:
     """Tests for the TaskTable widget."""
 
-    def test_status_colors_defined(self) -> None:
-        """Test that all task statuses have colors defined."""
+    def test_status_styles_defined(self) -> None:
+        """Test that all task statuses have styles (color and icon) defined."""
         for status in TaskStatus:
-            assert status.value in TaskTable.STATUS_COLORS, f"Missing color for {status.value}"
+            assert status.value in TaskTable.STATUS_STYLES, f"Missing style for {status.value}"
+            color, icon = TaskTable.STATUS_STYLES[status.value]
+            assert isinstance(color, str), f"Color for {status.value} should be a string"
+            assert isinstance(icon, str), f"Icon for {status.value} should be a string"
 
     def test_task_selected_message(self) -> None:
         """Test TaskSelected message initialization."""
@@ -182,9 +185,9 @@ class TestTaskTable:
 
             # Get the row data
             row = table.get_row_at(0)
-            # Status column (index 3) should be a styled Text object
+            # Status column (index 3) should be a styled Text object with icon
             assert isinstance(row[3], Text)
-            assert str(row[3]) == "pending"
+            assert "pending" in str(row[3])  # Status now includes icon prefix
 
     @pytest.mark.asyncio
     async def test_worker_id_truncated(self) -> None:
@@ -275,8 +278,8 @@ class TestTaskTable:
             await pilot.pause()
 
             row = table.get_row_at(0)
-            # Now returns Text object
-            assert str(row[5]) == "1234ms"
+            # Duration >= 1000ms is formatted as seconds (e.g., "1.2s")
+            assert str(row[5]) == "1.2s"
 
     @pytest.mark.asyncio
     async def test_missing_duration_shows_dash(self) -> None:

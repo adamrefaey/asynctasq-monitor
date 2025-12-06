@@ -1,27 +1,76 @@
 /* AsyncTasQ Monitor TUI Styles
  *
- * Base styles for the terminal-based monitoring UI.
- * Uses Textual CSS (TCSS) syntax.
+ * A modern, professional terminal UI for monitoring AsyncTasQ task queues.
+ * Uses Textual CSS (TCSS) with semantic color variables.
+ *
+ * Design Principles (2024-2025 Best Practices):
+ * - Clear visual hierarchy with consistent spacing
+ * - Semantic colors for status indication
+ * - Responsive layouts using fractional units
+ * - Subtle borders and backgrounds for grouping
  */
 
-/* Global screen styling */
+/* ========================================
+ * Global Styles
+ * ======================================== */
+
 Screen {
     background: $surface;
 }
 
-/* Header docking */
 Header {
     dock: top;
+    background: $primary-darken-3;
 }
 
-/* Footer docking */
+Header .title {
+    color: $text;
+    text-style: bold;
+}
+
+Header .subtitle {
+    color: $success;
+}
+
 Footer {
     dock: bottom;
+    background: $surface-darken-1;
 }
 
-/* Tabbed content area */
 TabbedContent {
     height: 1fr;
+}
+
+/* Tab styling */
+TabbedContent > ContentSwitcher {
+    height: 1fr;
+}
+
+TabPane {
+    padding: 0;
+}
+
+Tabs {
+    background: $surface-darken-1;
+}
+
+Tab {
+    padding: 0 2;
+    color: $text-muted;
+}
+
+Tab:hover {
+    color: $text;
+    text-style: bold;
+}
+
+Tab.-active {
+    color: $primary-lighten-2;
+    text-style: bold;
+}
+
+Underline {
+    color: $primary;
 }
 
 /* Placeholder content styling */
@@ -41,29 +90,32 @@ TabbedContent {
 
 DashboardScreen {
     height: 100%;
-    padding: 1;
+    padding: 1 2;
 }
 
-/* Metrics row layout */
+/* Metrics row layout - taller cards for better visibility */
 #metrics-row {
-    height: 8;
-    margin: 1 0;
+    height: 9;
+    margin: 0 0 1 0;
 }
 
-/* Section titles */
+/* Section titles with icon support */
 .section-title {
-    margin: 1 0 0 1;
+    margin: 1 0 0 0;
+    padding: 0 1;
     text-style: bold;
-    color: $text;
+    color: $primary-lighten-1;
 }
 
 /* Throughput sparkline container */
 #throughput-container {
-    height: 8;
-    margin: 0 1;
-    padding: 1;
+    height: 10;
+    margin: 0 0 1 0;
+    padding: 1 2;
     background: $panel;
-    border: solid $primary-darken-2;
+    border: round $primary-darken-1;
+    border-title-color: $primary-lighten-1;
+    border-title-style: bold;
 }
 
 #throughput-sparkline {
@@ -77,16 +129,34 @@ Sparkline > .sparkline--max-color {
 }
 
 Sparkline > .sparkline--min-color {
-    color: $primary;
+    color: $primary-lighten-2;
 }
 
 /* Recent activity section */
 #recent-activity {
-    margin: 0 1;
-    padding: 1;
+    margin: 0;
+    padding: 0;
     height: 1fr;
     background: $panel;
-    border: solid $primary-darken-2;
+    border: round $primary-darken-1;
+}
+
+/* Container title inside bordered containers */
+.container-title {
+    text-style: bold;
+    color: $primary-lighten-1;
+    margin: 0 0 1 0;
+    padding: 0 1;
+}
+
+/* Activity log styling */
+#activity-log {
+    padding: 0 1;
+    color: $text;
+}
+
+.activity-log {
+    padding: 0 1;
 }
 
 /* ========================================
@@ -96,37 +166,82 @@ Sparkline > .sparkline--min-color {
 MetricCard {
     width: 1fr;
     height: 100%;
-    margin: 0 1;
+    margin: 0 1 0 0;
     padding: 1 2;
     background: $panel;
-    border: solid $primary;
+    border: round $primary-darken-1;
+    content-align: center middle;
+}
+
+MetricCard:last-of-type {
+    margin-right: 0;
 }
 
 MetricCard .metric-label {
     text-align: center;
     color: $text-muted;
-    margin-bottom: 1;
+    margin-bottom: 0;
+    text-style: bold;
+}
+
+MetricCard .metric-icon {
+    text-align: center;
+    width: 100%;
+    height: 1;
 }
 
 MetricCard Digits {
     text-align: center;
     width: 100%;
+    height: auto;
 }
 
-/* MetricCard color variants */
+/* MetricCard color variants - border and digit colors */
+MetricCard.metric-warning {
+    border: round $warning 50%;
+}
+
 MetricCard.metric-warning Digits {
     color: $warning;
+}
+
+MetricCard.metric-warning .metric-icon {
+    color: $warning;
+}
+
+MetricCard.metric-accent {
+    border: round $accent 50%;
 }
 
 MetricCard.metric-accent Digits {
     color: $accent;
 }
 
+MetricCard.metric-accent .metric-icon {
+    color: $accent;
+}
+
+MetricCard.metric-success {
+    border: round $success 50%;
+}
+
 MetricCard.metric-success Digits {
     color: $success;
 }
 
+MetricCard.metric-success .metric-icon {
+    color: $success;
+}
+
+MetricCard.metric-error {
+    border: round $error 50%;
+}
+
 MetricCard.metric-error Digits {
+    color: $error;
+}
+
+MetricCard.metric-error .metric-icon {
     color: $error;
 }
 
@@ -173,13 +288,14 @@ HelpScreen {
 
 TasksScreen {
     height: 100%;
-    padding: 1;
+    padding: 1 2;
 }
 
 TasksScreen > .section-title {
-    margin: 0 0 1 1;
+    margin: 0 0 1 0;
+    padding: 0 1;
     text-style: bold;
-    color: $text;
+    color: $primary-lighten-1;
 }
 
 TasksScreen > #no-tasks-label {
@@ -187,6 +303,7 @@ TasksScreen > #no-tasks-label {
     height: 1fr;
     content-align: center middle;
     color: $text-muted;
+    text-style: italic;
 }
 
 /* ========================================
@@ -195,11 +312,23 @@ TasksScreen > #no-tasks-label {
 
 TaskTable {
     height: 1fr;
-    margin: 0 1;
+    margin: 0;
+    border: round $primary-darken-1;
+    background: $panel;
+}
+
+TaskTable > .datatable--header {
+    text-style: bold;
+    color: $text;
+    background: $primary-darken-2;
 }
 
 TaskTable > .datatable--cursor {
-    background: $accent 30%;
+    background: $primary 30%;
+}
+
+TaskTable > .datatable--hover {
+    background: $primary 15%;
 }
 
 /* ========================================
@@ -208,18 +337,33 @@ TaskTable > .datatable--cursor {
 
 FilterBar {
     height: 3;
-    margin: 0 1 1 1;
+    margin: 0 0 1 0;
     padding: 0;
+    background: transparent;
 }
 
 FilterBar > Input {
     width: 1fr;
     margin-right: 1;
+    border: round $primary-darken-1;
+}
+
+FilterBar > Input:focus {
+    border: round $primary;
 }
 
 FilterBar > Select {
-    width: 20;
+    width: 22;
     margin-right: 1;
+    border: round $primary-darken-1;
+}
+
+FilterBar > Select:last-of-type {
+    margin-right: 0;
+}
+
+FilterBar > Select:focus {
+    border: round $primary;
 }
 
 /* ========================================
@@ -345,38 +489,52 @@ TaskDetailScreen {
 
 WorkersScreen {
     height: 100%;
-    padding: 1;
+    padding: 1 2;
 }
 
 WorkersScreen .section-title {
-    margin: 0 0 0 1;
+    margin: 0 0 1 0;
+    padding: 0 1;
     text-style: bold;
-    color: $text;
+    color: $primary-lighten-1;
 }
 
 /* Worker Table Widget Styles */
 WorkerTable {
     height: 1fr;
-    margin: 0 1;
+    margin: 0;
+    border: round $primary-darken-1;
+    background: $panel;
+}
+
+WorkerTable > .datatable--header {
+    text-style: bold;
+    color: $text;
+    background: $primary-darken-2;
 }
 
 WorkerTable > .datatable--cursor {
-    background: $accent 30%;
+    background: $primary 30%;
+}
+
+WorkerTable > .datatable--hover {
+    background: $primary 15%;
 }
 
 /* Worker Summary Bar Styles */
 WorkerSummary {
     height: 3;
-    margin: 1 1;
-    padding: 0 1;
+    margin: 0 0 1 0;
+    padding: 0 2;
     background: $panel;
-    border: solid $primary-darken-2;
+    border: round $primary-darken-1;
 }
 
 WorkerSummary Static {
     width: 1fr;
     text-align: center;
     content-align: center middle;
+    text-style: bold;
 }
 
 WorkerSummary .summary-active {
@@ -432,42 +590,56 @@ LoadBar.load-high ProgressBar Bar > .bar--bar {
 
 QueuesScreen {
     height: 100%;
-    padding: 1;
+    padding: 1 2;
 }
 
 QueuesScreen .section-title {
-    margin: 0 0 0 1;
+    margin: 0 0 1 0;
+    padding: 0 1;
     text-style: bold;
-    color: $text;
+    color: $primary-lighten-1;
 }
 
 /* Queue Table Widget Styles */
 QueueTable {
     height: 1fr;
-    margin: 0 1;
+    margin: 0;
+    border: round $primary-darken-1;
+    background: $panel;
+}
+
+QueueTable > .datatable--header {
+    text-style: bold;
+    color: $text;
+    background: $primary-darken-2;
 }
 
 QueueTable > .datatable--cursor {
-    background: $accent 30%;
+    background: $primary 30%;
+}
+
+QueueTable > .datatable--hover {
+    background: $primary 15%;
 }
 
 /* Queue Summary Bar Styles */
 QueueSummary {
     height: 3;
-    margin: 1 1;
-    padding: 0 1;
+    margin: 0 0 1 0;
+    padding: 0 2;
     background: $panel;
-    border: solid $primary-darken-2;
+    border: round $primary-darken-1;
 }
 
 QueueSummary Static {
     width: 1fr;
     text-align: center;
     content-align: center middle;
+    text-style: bold;
 }
 
 QueueSummary .summary-queues {
-    color: $primary;
+    color: $primary-lighten-1;
 }
 
 QueueSummary .summary-pending {
