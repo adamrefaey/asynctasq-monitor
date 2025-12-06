@@ -18,7 +18,10 @@ import { Sidebar } from "../Sidebar";
 // Helper to render with router at specific path
 function renderWithRouter(initialPath = "/") {
 	return render(
-		<MemoryRouter initialEntries={[initialPath]}>
+		<MemoryRouter
+			initialEntries={[initialPath]}
+			future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+		>
 			<Sidebar />
 		</MemoryRouter>,
 	);

@@ -24,6 +24,47 @@ vi.mock("@/lib/api", () => ({
 // Import the mocked api after vi.mock
 import { api } from "@/lib/api";
 
+/**
+ * Mock data matching the BackendDashboardSummary format that Dashboard expects.
+ * The Dashboard component normalizes this data through normalizeDashboardData().
+ */
+const mockBackendDashboardData = {
+	total_tasks: 1234,
+	by_status: [
+		{ status: "running", count: 5, label: "Running" },
+		{ status: "pending", count: 42, label: "Pending" },
+		{ status: "completed", count: 1180, label: "Completed" },
+		{ status: "failed", count: 7, label: "Failed" },
+	],
+	queues: [
+		{
+			name: "default",
+			pending: 10,
+			running: 3,
+			failed: 2,
+			total: 500,
+		},
+		{
+			name: "emails",
+			pending: 5,
+			running: 1,
+			failed: 1,
+			total: 200,
+		},
+	],
+	active_workers: 2,
+	success_rate: 99.4,
+	updated_at: "2025-12-04T10:00:00Z",
+	running_count: 5,
+	pending_count: 42,
+	failed_count: 7,
+};
+
+/**
+ * Frontend DashboardSummary format used for type checking in some tests.
+ * Note: Dashboard component uses normalizeDashboardData() which doesn't
+ * currently support recent_activity from backend.
+ */
 const mockDashboardData: DashboardSummary = {
 	total_tasks: 1234,
 	running_tasks: 5,
@@ -52,50 +93,7 @@ const mockDashboardData: DashboardSummary = {
 		},
 	],
 	workers: [],
-	recent_activity: [
-		{
-			id: "task-1",
-			name: "send_email",
-			queue: "emails",
-			status: "completed",
-			enqueued_at: "2025-12-04T10:00:00Z",
-			started_at: "2025-12-04T10:00:01Z",
-			completed_at: "2025-12-04T10:00:02Z",
-			duration_ms: 1000,
-			worker_id: "worker-1",
-			attempt: 1,
-			max_retries: 3,
-			args: [],
-			kwargs: {},
-			result: null,
-			exception: null,
-			traceback: null,
-			priority: 0,
-			timeout_seconds: null,
-			tags: [],
-		},
-		{
-			id: "task-2",
-			name: "process_data",
-			queue: "default",
-			status: "running",
-			enqueued_at: "2025-12-04T10:01:00Z",
-			started_at: "2025-12-04T10:01:01Z",
-			completed_at: null,
-			duration_ms: null,
-			worker_id: "worker-2",
-			attempt: 1,
-			max_retries: 3,
-			args: [],
-			kwargs: {},
-			result: null,
-			exception: null,
-			traceback: null,
-			priority: 0,
-			timeout_seconds: null,
-			tags: [],
-		},
-	],
+	recent_activity: [],
 };
 
 describe("Dashboard", () => {
@@ -113,7 +111,10 @@ describe("Dashboard", () => {
 	});
 
 	it("renders stat cards with correct values", async () => {
-		vi.mocked(api.getDashboardSummary).mockResolvedValue(mockDashboardData);
+		// Cast to DashboardSummary - the actual API returns BackendDashboardSummary which Dashboard normalizes
+		vi.mocked(api.getDashboardSummary).mockResolvedValue(
+			mockBackendDashboardData as unknown as DashboardSummary,
+		);
 
 		renderWithProviders(<Dashboard />);
 
@@ -136,7 +137,12 @@ describe("Dashboard", () => {
 	});
 
 	it("renders recent activity with task items", async () => {
-		vi.mocked(api.getDashboardSummary).mockResolvedValue(mockDashboardData);
+		// Note: The backend doesn't provide recent_activity yet, so normalizeDashboardData()
+		// always returns an empty array. This test verifies the empty state is shown.
+		// Cast to DashboardSummary - the actual API returns BackendDashboardSummary which Dashboard normalizes
+		vi.mocked(api.getDashboardSummary).mockResolvedValue(
+			mockBackendDashboardData as unknown as DashboardSummary,
+		);
 
 		renderWithProviders(<Dashboard />);
 
@@ -144,13 +150,15 @@ describe("Dashboard", () => {
 			expect(screen.getByText("Recent Activity")).toBeInTheDocument();
 		});
 
-		// Check that recent activity tasks are displayed
-		expect(screen.getByText("send_email")).toBeInTheDocument();
-		expect(screen.getByText("process_data")).toBeInTheDocument();
+		// Backend doesn't provide recent_activity yet, so empty state is shown
+		expect(screen.getByText("No recent activity")).toBeInTheDocument();
 	});
 
 	it("renders queue health section with queue data", async () => {
-		vi.mocked(api.getDashboardSummary).mockResolvedValue(mockDashboardData);
+		// Cast to DashboardSummary - the actual API returns BackendDashboardSummary which Dashboard normalizes
+		vi.mocked(api.getDashboardSummary).mockResolvedValue(
+			mockBackendDashboardData as unknown as DashboardSummary,
+		);
 
 		renderWithProviders(<Dashboard />);
 
@@ -159,7 +167,6 @@ describe("Dashboard", () => {
 		});
 
 		// Check queues are displayed in the Queue Health section
-		// Use getAllByText since "default" appears both in Queue Health and Recent Activity
 		const defaultElements = screen.getAllByText("default");
 		expect(defaultElements.length).toBeGreaterThanOrEqual(1);
 

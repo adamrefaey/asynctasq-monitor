@@ -55,7 +55,7 @@ packages = ["src/asynctasq_monitor"]
 
 [dependency-groups]
 dev = [
-    "asynctasq>=0.0.0",
+    "asynctasq @ file:///${PROJECT_ROOT}/../asynctasq",
     "asynctasq-monitor[all]",     # Install all optional extras for dev
     "redis[hiredis]>=7.1.0",      # For event consumer testing
     "pyright>=1.1.407",

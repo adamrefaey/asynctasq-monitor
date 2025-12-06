@@ -106,7 +106,8 @@ describe("Button", () => {
 			const { user } = renderWithProviders(<Button onPress={handlePress}>Press me</Button>);
 
 			const button = screen.getByRole("button", { name: /press me/i });
-			button.focus();
+			await user.tab();
+			expect(button).toHaveFocus();
 			await user.keyboard("{Enter}");
 
 			expect(handlePress).toHaveBeenCalledTimes(1);
@@ -117,7 +118,8 @@ describe("Button", () => {
 			const { user } = renderWithProviders(<Button onPress={handlePress}>Press me</Button>);
 
 			const button = screen.getByRole("button", { name: /press me/i });
-			button.focus();
+			await user.tab();
+			expect(button).toHaveFocus();
 			await user.keyboard(" ");
 
 			expect(handlePress).toHaveBeenCalledTimes(1);
@@ -162,13 +164,13 @@ describe("Button", () => {
 			expect(screen.getByRole("button", { name: /close dialog/i })).toBeInTheDocument();
 		});
 
-		it("is focusable", () => {
-			renderWithProviders(<Button>Focusable</Button>);
+		it("is focusable", async () => {
+			const { user } = renderWithProviders(<Button>Focusable</Button>);
 
 			const button = screen.getByRole("button", { name: /focusable/i });
-			button.focus();
+			await user.tab();
 
-			expect(document.activeElement).toBe(button);
+			expect(button).toHaveFocus();
 		});
 
 		it("is not focusable when disabled", () => {

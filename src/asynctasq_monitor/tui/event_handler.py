@@ -128,7 +128,7 @@ class TUIEventConsumer:
 
     def __init__(
         self,
-        app: AsyncTasQMonitorTUI,
+        app: "AsyncTasQMonitorTUI",
         redis_url: str = "redis://localhost:6379",
         channel: str = "asynctasq:events",
     ) -> None:

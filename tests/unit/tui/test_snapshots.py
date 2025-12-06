@@ -28,7 +28,7 @@ pytestmark = [pytest.mark.unit, pytest.mark.snapshot]
 class TestDashboardSnapshots:
     """Snapshot tests for the Dashboard screen."""
 
-    def test_dashboard_initial_render(self, snap_compare: SnapshotAssertion) -> None:
+    def test_dashboard_initial_render(self, snap_compare: "SnapshotAssertion") -> None:
         """Test that the dashboard renders correctly on initial load."""
         from asynctasq_monitor.tui.app import AsyncTasQMonitorTUI
 
@@ -44,7 +44,7 @@ class TestDashboardSnapshots:
                 terminal_size=(120, 40),
             )
 
-    def test_dashboard_with_metrics(self, snap_compare: SnapshotAssertion) -> None:
+    def test_dashboard_with_metrics(self, snap_compare: "SnapshotAssertion") -> None:
         """Test dashboard with populated metrics."""
         from asynctasq_monitor.tui.app import AsyncTasQMonitorTUI
         from asynctasq_monitor.tui.screens.dashboard import DashboardScreen
@@ -70,7 +70,7 @@ class TestDashboardSnapshots:
 class TestTasksSnapshots:
     """Snapshot tests for the Tasks screen."""
 
-    def test_tasks_screen_initial(self, snap_compare: SnapshotAssertion) -> None:
+    def test_tasks_screen_initial(self, snap_compare: "SnapshotAssertion") -> None:
         """Test that the tasks screen renders correctly."""
         from asynctasq_monitor.tui.app import AsyncTasQMonitorTUI
 
@@ -85,7 +85,7 @@ class TestTasksSnapshots:
 class TestWorkersSnapshots:
     """Snapshot tests for the Workers screen."""
 
-    def test_workers_screen_initial(self, snap_compare: SnapshotAssertion) -> None:
+    def test_workers_screen_initial(self, snap_compare: "SnapshotAssertion") -> None:
         """Test that the workers screen renders correctly."""
         from asynctasq_monitor.tui.app import AsyncTasQMonitorTUI
 
@@ -100,7 +100,7 @@ class TestWorkersSnapshots:
 class TestQueuesSnapshots:
     """Snapshot tests for the Queues screen."""
 
-    def test_queues_screen_initial(self, snap_compare: SnapshotAssertion) -> None:
+    def test_queues_screen_initial(self, snap_compare: "SnapshotAssertion") -> None:
         """Test that the queues screen renders correctly."""
         from asynctasq_monitor.tui.app import AsyncTasQMonitorTUI
 
@@ -115,7 +115,7 @@ class TestQueuesSnapshots:
 class TestHelpSnapshots:
     """Snapshot tests for the Help modal."""
 
-    def test_help_modal_render(self, snap_compare: SnapshotAssertion) -> None:
+    def test_help_modal_render(self, snap_compare: "SnapshotAssertion") -> None:
         """Test that the help modal renders correctly."""
         from asynctasq_monitor.tui.app import AsyncTasQMonitorTUI
 
@@ -130,7 +130,7 @@ class TestHelpSnapshots:
 class TestNavigationSnapshots:
     """Snapshot tests for navigation between screens."""
 
-    def test_tab_navigation_sequence(self, snap_compare: SnapshotAssertion) -> None:
+    def test_tab_navigation_sequence(self, snap_compare: "SnapshotAssertion") -> None:
         """Test navigating through all tabs."""
         from asynctasq_monitor.tui.app import AsyncTasQMonitorTUI
 
@@ -146,7 +146,7 @@ class TestNavigationSnapshots:
 class TestResponsiveSnapshots:
     """Snapshot tests for different terminal sizes."""
 
-    def test_dashboard_small_terminal(self, snap_compare: SnapshotAssertion) -> None:
+    def test_dashboard_small_terminal(self, snap_compare: "SnapshotAssertion") -> None:
         """Test dashboard renders correctly in a small terminal."""
         from asynctasq_monitor.tui.app import AsyncTasQMonitorTUI
 
@@ -156,7 +156,7 @@ class TestResponsiveSnapshots:
                 terminal_size=(80, 24),  # Smaller terminal
             )
 
-    def test_dashboard_wide_terminal(self, snap_compare: SnapshotAssertion) -> None:
+    def test_dashboard_wide_terminal(self, snap_compare: "SnapshotAssertion") -> None:
         """Test dashboard renders correctly in a wide terminal."""
         from asynctasq_monitor.tui.app import AsyncTasQMonitorTUI
 

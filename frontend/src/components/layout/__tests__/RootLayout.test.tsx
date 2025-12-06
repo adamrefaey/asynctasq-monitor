@@ -53,7 +53,10 @@ function renderRootLayout(initialPath = "/") {
 
 	return render(
 		<QueryClientProvider client={queryClient}>
-			<MemoryRouter initialEntries={[initialPath]}>
+			<MemoryRouter
+				initialEntries={[initialPath]}
+				future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+			>
 				<Routes>
 					<Route element={<RootLayout />}>
 						<Route path="/" element={<div>Dashboard Page</div>} />

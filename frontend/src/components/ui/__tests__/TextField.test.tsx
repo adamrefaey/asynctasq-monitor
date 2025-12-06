@@ -150,13 +150,13 @@ describe("TextField", () => {
 			expect(input).toHaveValue("");
 		});
 
-		it("is focusable", () => {
-			renderWithProviders(<TextField label="Focusable" />);
+		it("is focusable", async () => {
+			const { user } = renderWithProviders(<TextField label="Focusable" />);
 
 			const input = screen.getByLabelText("Focusable");
-			input.focus();
+			await user.tab();
 
-			expect(document.activeElement).toBe(input);
+			expect(input).toHaveFocus();
 		});
 	});
 

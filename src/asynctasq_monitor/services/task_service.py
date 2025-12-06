@@ -1,7 +1,11 @@
 """Service layer that wraps the core dispatcher for the monitoring API."""
 
+from datetime import UTC, datetime
+
 from asynctasq.core.dispatcher import get_dispatcher
+from asynctasq.core.models import TaskInfo
 from asynctasq.drivers.base_driver import BaseDriver
+from asynctasq.serializers import BaseSerializer, MsgpackSerializer
 from asynctasq_monitor.models.task import Task, TaskFilters
 
 
@@ -9,10 +13,12 @@ class TaskService:
     """Wrap the core driver and convert core TaskInfo into Pydantic Task models."""
 
     _driver: BaseDriver | None
+    _serializer: BaseSerializer | None
 
     def __init__(self) -> None:
         """Create a TaskService with no attached driver initially."""
         self._driver = None
+        self._serializer = None
 
     async def get_tasks(
         self,
@@ -26,16 +32,19 @@ class TaskService:
             msg = "Driver not initialized"
             raise RuntimeError(msg)
 
-        # Call core driver; driver returns (list[TaskInfo], total_count)
-        task_infos, total = await self._driver.get_tasks(
+        raw_items, total = await self._driver.get_tasks(
             status=filters.status.value if filters.status else None,
             queue=filters.queue,
-            worker_id=filters.worker_id,
             limit=limit,
             offset=offset,
         )
 
-        tasks = [Task.from_task_info(ti) for ti in task_infos]
+        tasks: list[Task] = []
+        for raw_bytes, queue_name, status in raw_items:
+            task_info = await self._deserialize_task_bytes(raw_bytes, queue_name, status)
+            if task_info:
+                tasks.append(Task.from_task_info(task_info))
+
         return tasks, total
 
     async def get_task_by_id(self, task_id: str) -> Task | None:
@@ -44,7 +53,11 @@ class TaskService:
         if self._driver is None:
             msg = "Driver not initialized"
             raise RuntimeError(msg)
-        task_info = await self._driver.get_task_by_id(task_id)
+        raw_bytes = await self._driver.get_task_by_id(task_id)
+        if not raw_bytes:
+            return None
+        # We don't have queue/status from get_task_by_id, use defaults
+        task_info = await self._deserialize_task_bytes(raw_bytes, "default", "pending")
         if not task_info:
             return None
         return Task.from_task_info(task_info)
@@ -66,7 +79,7 @@ class TaskService:
         return await self._driver.delete_task(task_id)
 
     def _ensure_driver(self) -> None:
-        """Ensure the core driver is available; set `self._driver`.
+        """Ensure the core driver and serializer are available.
 
         Raises:
             RuntimeError: if the dispatcher or driver cannot be obtained.
@@ -78,3 +91,57 @@ class TaskService:
             if dispatcher is None or not hasattr(dispatcher, "driver"):
                 raise RuntimeError(missing_msg)
             self._driver = dispatcher.driver
+            # Get serializer from dispatcher or create default
+            self._serializer = getattr(dispatcher, "serializer", None) or MsgpackSerializer()
+
+    async def _deserialize_task_bytes(
+        self,
+        raw_bytes: bytes,
+        queue_name: str,
+        status: str,
+    ) -> TaskInfo | None:
+        """Deserialize raw task bytes into a TaskInfo object.
+
+        Args:
+            raw_bytes: Msgpack-serialized task data
+            queue_name: Queue the task was found in
+            status: Task status (pending, running)
+
+        Returns:
+            TaskInfo object or None if deserialization fails
+        """
+        if self._serializer is None:
+            self._serializer = MsgpackSerializer()
+
+        try:
+            task_dict = await self._serializer.deserialize(raw_bytes)
+
+            # Extract task metadata from the serialized dict
+            task_id = task_dict.get("task_id", "")
+            task_name = task_dict.get("task_name", "")
+            enqueued_at = task_dict.get("enqueued_at")
+
+            # Handle enqueued_at being already a datetime or needing parsing
+            if enqueued_at is None:
+                enqueued_at = datetime.now(UTC)
+            elif isinstance(enqueued_at, str):
+                enqueued_at = datetime.fromisoformat(enqueued_at)
+
+            params = task_dict.get("params", {})
+            args = params.get("args", [])
+            kwargs = params.get("kwargs", {})
+
+            return TaskInfo(
+                id=task_id,
+                name=task_name,
+                queue=queue_name,
+                status=status,
+                enqueued_at=enqueued_at,
+                args=args,
+                kwargs=kwargs,
+                priority=task_dict.get("priority", 0),
+                max_retries=task_dict.get("max_retries", 3),
+            )
+        except Exception:
+            # If deserialization fails, return None and skip this task
+            return None

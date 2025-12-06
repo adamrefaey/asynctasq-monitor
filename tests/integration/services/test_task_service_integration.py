@@ -18,10 +18,11 @@ References:
 - https://docs.pytest.org/en/stable/how-to/parametrize.html
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import msgpack
 import pytest
 import pytest_asyncio
 
@@ -35,15 +36,43 @@ pytestmark = pytest.mark.asyncio
 
 
 # ============================================================================
+# Helper Functions
+# ============================================================================
+
+
+def task_info_to_raw_bytes(task_info: TaskInfo) -> bytes:
+    """Convert a TaskInfo to msgpack raw bytes for testing.
+
+    This simulates what the dispatcher stores in the queue.
+    """
+    task_dict = {
+        "task_id": task_info.id,
+        "task_name": task_info.name,
+        "enqueued_at": task_info.enqueued_at.isoformat() if task_info.enqueued_at else None,
+        "params": {
+            "args": task_info.args or [],
+            "kwargs": task_info.kwargs or {},
+        },
+        "priority": task_info.priority,
+        "max_retries": task_info.max_retries,
+    }
+    raw_bytes = msgpack.packb(task_dict, use_bin_type=True)
+    assert isinstance(raw_bytes, bytes)
+    return raw_bytes
+
+
+# ============================================================================
 # Fixtures
 # ============================================================================
 
 
 @pytest.fixture
 def mock_driver() -> MagicMock:
-    """Create a mock BaseDriver for testing."""
+    """Create a mock BaseDriver for testing with new raw bytes interface."""
     driver = MagicMock(spec=BaseDriver)
+    # Default: return empty list of raw task data
     driver.get_tasks = AsyncMock(return_value=([], 0))
+    # Default: return None (task not found)
     driver.get_task_by_id = AsyncMock(return_value=None)
     driver.retry_task = AsyncMock(return_value=False)
     driver.delete_task = AsyncMock(return_value=False)
@@ -234,10 +263,12 @@ class TestGetTasks:
         """get_tasks should convert TaskInfo objects to Task models."""
         # Arrange
         task_infos = [
-            task_info_factory(id="task-1", name="task_one", status="pending"),
-            task_info_factory(id="task-2", name="task_two", status="completed"),
+            task_info_factory(id="task-1", name="task_one", status="pending", queue="default"),
+            task_info_factory(id="task-2", name="task_two", status="completed", queue="default"),
         ]
-        mock_driver.get_tasks.return_value = (task_infos, 2)
+        # Convert to raw bytes tuples: (bytes, queue, status)
+        raw_tuples = [(task_info_to_raw_bytes(ti), ti.queue, ti.status) for ti in task_infos]
+        mock_driver.get_tasks.return_value = (raw_tuples, 2)
         filters = TaskFilters()
 
         # Act
@@ -269,7 +300,6 @@ class TestGetTasks:
         mock_driver.get_tasks.assert_awaited_once_with(
             status="running",
             queue=None,
-            worker_id=None,
             limit=50,
             offset=0,
         )
@@ -290,28 +320,6 @@ class TestGetTasks:
         mock_driver.get_tasks.assert_awaited_once_with(
             status=None,
             queue="emails",
-            worker_id=None,
-            limit=50,
-            offset=0,
-        )
-
-    async def test_get_tasks_passes_worker_id_filter_to_driver(
-        self,
-        task_service: TaskService,
-        mock_driver: MagicMock,
-    ) -> None:
-        """get_tasks should pass worker_id filter to driver."""
-        # Arrange
-        filters = TaskFilters(worker_id="worker-abc")
-
-        # Act
-        await task_service.get_tasks(filters)
-
-        # Assert
-        mock_driver.get_tasks.assert_awaited_once_with(
-            status=None,
-            queue=None,
-            worker_id="worker-abc",
             limit=50,
             offset=0,
         )
@@ -336,7 +344,6 @@ class TestGetTasks:
         mock_driver.get_tasks.assert_awaited_once_with(
             status="failed",
             queue="notifications",
-            worker_id="worker-xyz",
             limit=25,
             offset=10,
         )
@@ -357,7 +364,6 @@ class TestGetTasks:
         mock_driver.get_tasks.assert_awaited_once_with(
             status=None,
             queue=None,
-            worker_id=None,
             limit=100,
             offset=50,
         )
@@ -396,8 +402,11 @@ class TestGetTasks:
     ) -> None:
         """get_tasks should correctly handle all possible task statuses."""
         # Arrange
-        task_info = task_info_factory(id=f"task-{status.value}", status=status.value)
-        mock_driver.get_tasks.return_value = ([task_info], 1)
+        task_info = task_info_factory(
+            id=f"task-{status.value}", status=status.value, queue="default"
+        )
+        raw_tuples = [(task_info_to_raw_bytes(task_info), task_info.queue, task_info.status)]
+        mock_driver.get_tasks.return_value = (raw_tuples, 1)
         filters = TaskFilters()
 
         # Act
@@ -413,50 +422,38 @@ class TestGetTasks:
         mock_driver: MagicMock,
         task_info_factory: Any,
     ) -> None:
-        """get_tasks should preserve all task metadata during conversion."""
+        """get_tasks should preserve task definition metadata from msgpack."""
         # Arrange
         now = datetime.now(UTC)
         task_info = task_info_factory(
             id="task-full",
             name="full_task",
             queue="high-priority",
-            status="completed",
-            enqueued_at=now - timedelta(minutes=5),
-            started_at=now - timedelta(minutes=4),
-            completed_at=now,
-            duration_ms=60000,
-            worker_id="worker-1",
-            attempt=2,
+            status="pending",
+            enqueued_at=now,
             max_retries=5,
             args=["arg1", 123],
             kwargs={"key": "value"},
-            result={"success": True},
             priority=10,
-            timeout_seconds=300,
-            tags=["important", "email"],
         )
-        mock_driver.get_tasks.return_value = ([task_info], 1)
+        raw_tuples = [(task_info_to_raw_bytes(task_info), task_info.queue, task_info.status)]
+        mock_driver.get_tasks.return_value = (raw_tuples, 1)
         filters = TaskFilters()
 
         # Act
         tasks, _ = await task_service.get_tasks(filters)
 
-        # Assert
+        # Assert - only check fields that are in the msgpack task definition
         task = tasks[0]
         assert task.id == "task-full"
         assert task.name == "full_task"
         assert task.queue == "high-priority"
-        assert task.status == TaskStatus.COMPLETED
-        assert task.duration_ms == 60000
-        assert task.worker_id == "worker-1"
-        assert task.attempt == 2
+        assert task.status == TaskStatus.PENDING
         assert task.max_retries == 5
         assert task.args == ["arg1", 123]
         assert task.kwargs == {"key": "value"}
-        assert task.result == {"success": True}
         assert task.priority == 10
-        assert task.timeout_seconds == 300
-        assert task.tags == ["important", "email"]
+        # Runtime metadata (duration_ms, worker_id, etc.) are not in raw task bytes
 
 
 # ============================================================================
@@ -476,7 +473,8 @@ class TestGetTaskById:
         """get_task_by_id should return Task model when task exists."""
         # Arrange
         task_info = task_info_factory(id="task-abc", name="found_task")
-        mock_driver.get_task_by_id.return_value = task_info
+        raw_bytes = task_info_to_raw_bytes(task_info)
+        mock_driver.get_task_by_id.return_value = raw_bytes
 
         # Act
         task = await task_service.get_task_by_id("task-abc")
@@ -523,25 +521,24 @@ class TestGetTaskById:
         mock_driver: MagicMock,
         task_info_factory: Any,
     ) -> None:
-        """get_task_by_id should preserve exception and traceback for failed tasks."""
+        """get_task_by_id returns task even though exception/traceback are not in raw msgpack."""
         # Arrange
         task_info = task_info_factory(
             id="failed-task",
             status="failed",
-            exception="ValueError: Invalid input",
-            traceback="Traceback (most recent call last):\n  File...",
         )
-        mock_driver.get_task_by_id.return_value = task_info
+        raw_bytes = task_info_to_raw_bytes(task_info)
+        mock_driver.get_task_by_id.return_value = raw_bytes
 
         # Act
         task = await task_service.get_task_by_id("failed-task")
 
         # Assert
         assert task is not None
-        assert task.status == TaskStatus.FAILED
-        assert task.exception == "ValueError: Invalid input"
-        assert task.traceback is not None
-        assert "Traceback" in task.traceback
+        assert task.id == "failed-task"
+        # Exception/traceback are runtime metadata not stored in raw msgpack
+        assert task.exception is None
+        assert task.traceback is None
 
     async def test_get_task_by_id_with_uuid_format(
         self,
@@ -553,7 +550,8 @@ class TestGetTaskById:
         # Arrange
         uuid_id = "550e8400-e29b-41d4-a716-446655440000"
         task_info = task_info_factory(id=uuid_id)
-        mock_driver.get_task_by_id.return_value = task_info
+        raw_bytes = task_info_to_raw_bytes(task_info)
+        mock_driver.get_task_by_id.return_value = raw_bytes
 
         # Act
         task = await task_service.get_task_by_id(uuid_id)
@@ -735,7 +733,8 @@ class TestIntegrationEdgeCases:
         """Service should handle large number of tasks efficiently."""
         # Arrange
         task_infos = [task_info_factory(id=f"task-{i}", name=f"task_{i}") for i in range(500)]
-        mock_driver.get_tasks.return_value = (task_infos, 500)
+        raw_tuples = [(task_info_to_raw_bytes(ti), ti.queue, ti.status) for ti in task_infos]
+        mock_driver.get_tasks.return_value = (raw_tuples, 500)
         filters = TaskFilters()
 
         # Act
@@ -760,7 +759,14 @@ class TestIntegrationEdgeCases:
             status="pending",
             enqueued_at=datetime.now(UTC),
         )
-        mock_driver.get_tasks.return_value = ([minimal_task_info], 1)
+        raw_tuples = [
+            (
+                task_info_to_raw_bytes(minimal_task_info),
+                minimal_task_info.queue,
+                minimal_task_info.status,
+            )
+        ]
+        mock_driver.get_tasks.return_value = (raw_tuples, 1)
         filters = TaskFilters()
 
         # Act
@@ -782,26 +788,23 @@ class TestIntegrationEdgeCases:
         mock_driver: MagicMock,
         task_info_factory: Any,
     ) -> None:
-        """Service should handle tasks with complex nested result data."""
+        """Service should handle tasks even though complex result data is not in msgpack."""
         # Arrange
-        complex_result = {
-            "data": [1, 2, 3],
-            "nested": {"deep": {"value": True}},
-            "list_of_dicts": [{"a": 1}, {"b": 2}],
-        }
         task_info = task_info_factory(
             id="complex-result-task",
             status="completed",
-            result=complex_result,
         )
-        mock_driver.get_task_by_id.return_value = task_info
+        raw_bytes = task_info_to_raw_bytes(task_info)
+        mock_driver.get_task_by_id.return_value = raw_bytes
 
         # Act
         task = await task_service.get_task_by_id("complex-result-task")
 
         # Assert
         assert task is not None
-        assert task.result == complex_result
+        assert task.id == "complex-result-task"
+        # Result is runtime metadata not stored in raw msgpack
+        assert task.result is None
 
     async def test_service_handles_empty_string_task_id(
         self,
@@ -834,7 +837,8 @@ class TestIntegrationEdgeCases:
             args=special_args,
             kwargs=special_kwargs,
         )
-        mock_driver.get_task_by_id.return_value = task_info
+        raw_bytes = task_info_to_raw_bytes(task_info)
+        mock_driver.get_task_by_id.return_value = raw_bytes
 
         # Act
         task = await task_service.get_task_by_id("special-chars-task")
@@ -853,8 +857,10 @@ class TestIntegrationEdgeCases:
         """Service should handle multiple operations sequentially."""
         # Arrange
         task_info = task_info_factory(id="test-task")
-        mock_driver.get_tasks.return_value = ([task_info], 1)
-        mock_driver.get_task_by_id.return_value = task_info
+        raw_tuples = [(task_info_to_raw_bytes(task_info), task_info.queue, task_info.status)]
+        mock_driver.get_tasks.return_value = (raw_tuples, 1)
+        raw_bytes = task_info_to_raw_bytes(task_info)
+        mock_driver.get_task_by_id.return_value = raw_bytes
         mock_driver.retry_task.return_value = True
         mock_driver.delete_task.return_value = True
         filters = TaskFilters()
@@ -887,7 +893,6 @@ class TestIntegrationEdgeCases:
         mock_driver.get_tasks.assert_awaited_once_with(
             status=None,
             queue="test-queue",
-            worker_id=None,
             limit=50,
             offset=0,
         )
@@ -898,25 +903,24 @@ class TestIntegrationEdgeCases:
         mock_driver: MagicMock,
         task_info_factory: Any,
     ) -> None:
-        """Service should return tasks with working computed fields."""
+        """Service should return tasks with working computed fields from available data."""
         # Arrange
         task_info = task_info_factory(
             id="computed-task",
             status="failed",
-            attempt=2,
             max_retries=5,
-            duration_ms=2500,
         )
-        mock_driver.get_task_by_id.return_value = task_info
+        raw_bytes = task_info_to_raw_bytes(task_info)
+        mock_driver.get_task_by_id.return_value = raw_bytes
 
         # Act
         task = await task_service.get_task_by_id("computed-task")
 
         # Assert
         assert task is not None
-        assert task.is_retryable is True  # failed and attempt < max_retries
-        assert task.has_error is True  # status is failed
-        assert task.duration_seconds == 2.5  # 2500ms = 2.5s
+        assert task.id == "computed-task"
+        assert task.max_retries == 5
+        # Runtime metadata (attempt, duration_ms) not in raw msgpack
 
     async def test_service_handles_concurrent_driver_access(
         self,
@@ -928,7 +932,8 @@ class TestIntegrationEdgeCases:
         # Arrange
         service = TaskService()
         task_info = task_info_factory(id="concurrent-task")
-        mock_driver.get_task_by_id.return_value = task_info
+        raw_bytes = task_info_to_raw_bytes(task_info)
+        mock_driver.get_task_by_id.return_value = raw_bytes
 
         # Simulate driver being set by _ensure_driver during first access
         original_ensure = service._ensure_driver

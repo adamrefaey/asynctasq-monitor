@@ -15,7 +15,7 @@
 
 import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { BrowserRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Shortcut, useKeyboardShortcuts } from "../useKeyboardShortcuts";
 
@@ -31,7 +31,11 @@ vi.mock("react-router-dom", async () => {
 
 // Wrapper component for rendering hooks with Router
 function Wrapper({ children }: { children: ReactNode }) {
-	return <BrowserRouter>{children}</BrowserRouter>;
+	return (
+		<MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+			{children}
+		</MemoryRouter>
+	);
 }
 
 // Helper to create keyboard events
@@ -226,17 +230,6 @@ describe("useKeyboardShortcuts", () => {
 			});
 
 			expect(result.current.currentSequence).toBe("g");
-		});
-
-		// Note: The sequence timeout is tested indirectly through other tests.
-		// The hook properly clears the sequence after 1 second in production,
-		// but testing this with fake timers is complex due to React's effect
-		// dependencies causing cleanup during state updates.
-		// The "clears sequence timeout on unmount" test verifies the cleanup behavior.
-		it.skip("clears sequence after timeout", () => {
-			// This test is skipped because the hook's useEffect cleanup runs when
-			// currentSequence changes, clearing the timeout before we can advance timers.
-			// The actual timeout behavior works correctly in the browser.
 		});
 
 		it("clears sequence after successful match", () => {

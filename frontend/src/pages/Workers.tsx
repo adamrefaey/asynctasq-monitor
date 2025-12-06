@@ -418,7 +418,12 @@ export default function Workers() {
 					{/* Filters */}
 					<div className="flex flex-col gap-4 sm:flex-row">
 						<div className="flex-1 max-w-md">
-							<TextField placeholder="Search workers..." value={search} onChange={setSearch} />
+							<TextField
+								aria-label="Search workers"
+								placeholder="Search workers..."
+								value={search}
+								onChange={setSearch}
+							/>
 						</div>
 
 						<div className="flex gap-2">

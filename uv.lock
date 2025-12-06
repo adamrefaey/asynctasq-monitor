@@ -36,13 +36,49 @@ wheels = [
 [[package]]
 name = "asynctasq"
 version = "0.9.8"
-source = { registry = "https://pypi.org/simple" }
+source = { directory = "../asynctasq" }
 dependencies = [
     { name = "msgpack" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f5/ac/0f4521c6ba98f06e4d6a765f6767cc00bb70608be4a91812a7f3ac99fdeb/asynctasq-0.9.8.tar.gz", hash = "sha256:08cb3578dd749bc2cbdf9f7fd8b18a7457c9cd0c93a92da4468ec89520e15f4e", size = 340627, upload-time = "2025-12-06T01:25:56.668Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5b/24/b183bdf928f4aa2fa9b95c13ab031bf160feff58e68c103447616aa6f0a2/asynctasq-0.9.8-py3-none-any.whl", hash = "sha256:258236565a05d91bb07d9830503ffc3b0a735a8517678a8afa7784fb22a4c65b", size = 78973, upload-time = "2025-12-06T01:25:55.432Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "aio-pika", marker = "extra == 'rabbitmq'", specifier = ">=9.5.8" },
+    { name = "aioboto3", marker = "extra == 'sqs'", specifier = ">=15.5.0" },
+    { name = "asyncmy", marker = "extra == 'mysql'", specifier = ">=0.2.10" },
+    { name = "asyncpg", marker = "extra == 'postgres'", specifier = ">=0.30.0" },
+    { name = "asyncpg-stubs", marker = "extra == 'postgres'", specifier = ">=0.30.0" },
+    { name = "asynctasq", extras = ["redis", "sqs", "postgres", "mysql", "rabbitmq", "sqlalchemy", "django", "tortoise", "fastapi", "monitor"], marker = "extra == 'all'" },
+    { name = "cryptography", marker = "extra == 'mysql'", specifier = ">=46.0.0" },
+    { name = "django", marker = "extra == 'django'", specifier = ">=5.2.8" },
+    { name = "fastapi", marker = "extra == 'fastapi'", specifier = ">=0.115.0" },
+    { name = "greenlet", marker = "extra == 'sqlalchemy'", specifier = ">=3.2.4" },
+    { name = "msgpack", specifier = ">=1.1.0" },
+    { name = "psycopg2-binary", marker = "extra == 'django'", specifier = ">=2.9.11" },
+    { name = "redis", extras = ["hiredis"], marker = "extra == 'monitor'", specifier = ">=7.1.0" },
+    { name = "redis", extras = ["hiredis"], marker = "extra == 'redis'", specifier = ">=7.1.0" },
+    { name = "sqlalchemy", marker = "extra == 'sqlalchemy'", specifier = ">=2.0.44" },
+    { name = "tortoise-orm", marker = "extra == 'tortoise'", specifier = ">=0.25.1" },
+    { name = "types-aioboto3", extras = ["sqs"], marker = "extra == 'sqs'", specifier = ">=15.5.0" },
+]
+provides-extras = ["redis", "sqs", "postgres", "mysql", "rabbitmq", "sqlalchemy", "django", "tortoise", "fastapi", "monitor", "all"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "bandit", specifier = ">=1.9.2" },
+    { name = "boto3-stubs", extras = ["essential"], specifier = ">=1.40.76" },
+    { name = "coverage-badge", specifier = ">=1.1.2" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pip-audit", specifier = ">=2.9.0" },
+    { name = "pre-commit", specifier = ">=4.4.0" },
+    { name = "pyright", specifier = ">=1.1.407" },
+    { name = "pytest", specifier = ">=9.0.1" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-timeout", specifier = ">=2.3.1" },
+    { name = "ruff", specifier = ">=0.14.6" },
+    { name = "yamllint", specifier = ">=1.37.1" },
 ]
 
 [[package]]
@@ -110,7 +146,7 @@ provides-extras = ["web", "tui", "all"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "asynctasq", specifier = ">=0.0.0" },
+    { name = "asynctasq", directory = "../asynctasq" },
     { name = "asynctasq-monitor", extras = ["all"] },
     { name = "bandit", specifier = ">=1.9.2" },
     { name = "coverage-badge", specifier = ">=1.1.2" },

@@ -14,7 +14,77 @@ import {
 	LoadingOverlay,
 } from "@/components/ui";
 import { api } from "@/lib/api";
-import type { DashboardSummary, Task } from "@/lib/types";
+import type { Task } from "@/lib/types";
+
+/**
+ * Backend API response for dashboard summary.
+ * This matches what the backend actually returns.
+ */
+interface BackendStatusCount {
+	status: string;
+	count: number;
+	label: string;
+}
+
+interface BackendQueueStats {
+	name: string;
+	pending: number;
+	running: number;
+	failed: number;
+	total?: number;
+}
+
+interface BackendDashboardSummary {
+	total_tasks: number;
+	by_status: BackendStatusCount[];
+	queues: BackendQueueStats[];
+	active_workers: number;
+	success_rate: number;
+	updated_at: string;
+	pending_count?: number;
+	failed_count?: number;
+	running_count?: number;
+}
+
+/**
+ * Normalized dashboard data for UI consumption.
+ */
+interface NormalizedDashboardData {
+	total_tasks: number;
+	running_tasks: number;
+	pending_tasks: number;
+	completed_tasks: number;
+	failed_tasks: number;
+	success_rate: number;
+	queues: Array<{ name: string; depth: number; processing: number }>;
+	recent_activity: Task[];
+}
+
+/**
+ * Transform backend response to normalized UI format.
+ */
+function normalizeDashboardData(data: BackendDashboardSummary): NormalizedDashboardData {
+	// Extract counts from by_status array
+	const getStatusCount = (status: string): number => {
+		const statusItem = data.by_status?.find((s) => s.status === status);
+		return statusItem?.count ?? 0;
+	};
+
+	return {
+		total_tasks: data.total_tasks ?? 0,
+		running_tasks: data.running_count ?? getStatusCount("running"),
+		pending_tasks: data.pending_count ?? getStatusCount("pending"),
+		completed_tasks: getStatusCount("completed"),
+		failed_tasks: data.failed_count ?? getStatusCount("failed"),
+		success_rate: data.success_rate ?? 0,
+		queues: (data.queues ?? []).map((q) => ({
+			name: q.name,
+			depth: q.pending ?? 0,
+			processing: q.running ?? 0,
+		})),
+		recent_activity: [], // Backend doesn't provide this yet
+	};
+}
 
 interface StatCardProps {
 	title: string;
@@ -79,9 +149,9 @@ function RecentActivityItem({ task }: { task: Task }): React.ReactNode {
 }
 
 export default function DashboardPage(): React.ReactNode {
-	const { data, isLoading, error } = useQuery<DashboardSummary>({
+	const { data, isLoading, error } = useQuery<BackendDashboardSummary>({
 		queryKey: ["dashboard"],
-		queryFn: api.getDashboardSummary,
+		queryFn: api.getDashboardSummary as unknown as () => Promise<BackendDashboardSummary>,
 		refetchInterval: 5000, // Refresh every 5 seconds
 	});
 
@@ -103,18 +173,19 @@ export default function DashboardPage(): React.ReactNode {
 		);
 	}
 
-	// Show placeholder data if no data available
-	const summary: DashboardSummary = data ?? {
-		total_tasks: 0,
-		running_tasks: 0,
-		pending_tasks: 0,
-		completed_tasks: 0,
-		failed_tasks: 0,
-		success_rate: 0,
-		queues: [],
-		workers: [],
-		recent_activity: [],
-	};
+	// Normalize backend data or use default empty state
+	const summary: NormalizedDashboardData = data
+		? normalizeDashboardData(data)
+		: {
+				total_tasks: 0,
+				running_tasks: 0,
+				pending_tasks: 0,
+				completed_tasks: 0,
+				failed_tasks: 0,
+				success_rate: 0,
+				queues: [],
+				recent_activity: [],
+			};
 
 	return (
 		<div className="space-y-6">

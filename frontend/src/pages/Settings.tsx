@@ -249,6 +249,7 @@ export default function Settings() {
 								>
 									<div className="flex items-center gap-2">
 										<TextField
+											aria-label="Auto refresh interval in seconds"
 											type="number"
 											value={String(refreshInterval)}
 											onChange={(v) => setRefreshInterval(Number(v) || 5)}
@@ -264,6 +265,7 @@ export default function Settings() {
 									description="Timezone for displaying dates and times"
 								>
 									<select
+										aria-label="Select timezone"
 										value={timezone}
 										onChange={(e) => setTimezone(e.target.value as TimezoneOption)}
 										className="
@@ -350,7 +352,12 @@ export default function Settings() {
 							</Card.Header>
 							<Card.Content>
 								<SettingRow icon={Server} title="API URL" description="Backend API endpoint URL">
-									<TextField value={apiUrl} onChange={(v) => setApiUrl(v)} className="w-64" />
+									<TextField
+										aria-label="API URL"
+										value={apiUrl}
+										onChange={(v) => setApiUrl(v)}
+										className="w-64"
+									/>
 								</SettingRow>
 
 								<SettingRow
@@ -358,7 +365,12 @@ export default function Settings() {
 									title="WebSocket URL"
 									description="Real-time updates WebSocket endpoint"
 								>
-									<TextField value={wsUrl} onChange={(v) => setWsUrl(v)} className="w-64" />
+									<TextField
+										aria-label="WebSocket URL"
+										value={wsUrl}
+										onChange={(v) => setWsUrl(v)}
+										className="w-64"
+									/>
 								</SettingRow>
 
 								<SettingRow
@@ -368,6 +380,7 @@ export default function Settings() {
 								>
 									<div className="flex items-center gap-2">
 										<TextField
+											aria-label="Request timeout in seconds"
 											type="number"
 											value={String(timeout)}
 											onChange={(v) => setTimeoutSetting(Number(v) || 30)}
@@ -477,6 +490,7 @@ export default function Settings() {
 									description="Maximum retry attempts for failed requests"
 								>
 									<TextField
+										aria-label="Maximum retry attempts"
 										type="number"
 										value={String(maxRetries)}
 										onChange={(v) => setMaxRetries(Number(v) || 3)}
@@ -490,6 +504,7 @@ export default function Settings() {
 									description="Minimum log level to record"
 								>
 									<select
+										aria-label="Select log level"
 										value={logLevel}
 										onChange={(e) => setLogLevel(e.target.value as LogLevel)}
 										className="

@@ -87,6 +87,7 @@ function TaskFiltersBar({
 				<div className="relative flex-1 min-w-[200px]">
 					<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
 					<input
+						aria-label="Search tasks by name or ID"
 						type="search"
 						placeholder="Search tasks by name or ID..."
 						value={searchQuery}
@@ -97,6 +98,7 @@ function TaskFiltersBar({
 
 				{/* Status filter */}
 				<Select<{ value: string; label: string }>
+					aria-label="Filter by status"
 					selectedKey={statusFilter}
 					onSelectionChange={(key) => onStatusChange(key as TaskStatus | "all")}
 					placeholder="Filter by status"
@@ -112,6 +114,7 @@ function TaskFiltersBar({
 				{/* Queue filter */}
 				<div className="relative">
 					<input
+						aria-label="Filter by queue name"
 						type="text"
 						placeholder="Queue name..."
 						value={queueFilter}

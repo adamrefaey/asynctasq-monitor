@@ -212,7 +212,8 @@ describe("Select", () => {
 			);
 
 			const trigger = screen.getByRole("button");
-			trigger.focus();
+			await user.tab();
+			expect(trigger).toHaveFocus();
 			await user.keyboard("{Enter}");
 
 			await waitFor(() => {
@@ -228,7 +229,8 @@ describe("Select", () => {
 			);
 
 			const trigger = screen.getByRole("button");
-			trigger.focus();
+			await user.tab();
+			expect(trigger).toHaveFocus();
 			await user.keyboard(" ");
 
 			await waitFor(() => {

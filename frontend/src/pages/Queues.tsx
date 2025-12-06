@@ -560,7 +560,12 @@ export default function Queues() {
 					{/* Filters */}
 					<div className="flex flex-col gap-4 sm:flex-row">
 						<div className="flex-1 max-w-md">
-							<TextField placeholder="Search queues..." value={search} onChange={setSearch} />
+							<TextField
+								aria-label="Search queues"
+								placeholder="Search queues..."
+								value={search}
+								onChange={setSearch}
+							/>
 						</div>
 
 						<div className="flex gap-2">

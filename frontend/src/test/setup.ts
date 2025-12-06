@@ -53,3 +53,35 @@ Object.defineProperty(window, "IntersectionObserver", {
 	writable: true,
 	value: MockIntersectionObserver,
 });
+
+// Suppress console warnings for SVG elements and Recharts dimension issues in JSDOM
+// biome-ignore lint/suspicious/noConsole: Intentionally capturing console methods to filter test noise
+const originalError = console.error;
+// biome-ignore lint/suspicious/noConsole: Intentionally capturing console methods to filter test noise
+const originalWarn = console.warn;
+
+const suppressedPatterns = [
+	"is unrecognized in this browser",
+	"is using incorrect casing",
+	"width(-1)",
+	"width(0)",
+	"height(-1)",
+	"height(0)",
+	"should be greater than 0",
+];
+
+function shouldSuppress(message: string): boolean {
+	return suppressedPatterns.some((pattern) => message.includes(pattern));
+}
+
+console.error = (...args: unknown[]) => {
+	const message = typeof args[0] === "string" ? args[0] : "";
+	if (shouldSuppress(message)) return;
+	originalError.apply(console, args);
+};
+
+console.warn = (...args: unknown[]) => {
+	const message = typeof args[0] === "string" ? args[0] : "";
+	if (shouldSuppress(message)) return;
+	originalWarn.apply(console, args);
+};
