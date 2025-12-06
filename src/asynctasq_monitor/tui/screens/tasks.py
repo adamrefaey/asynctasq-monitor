@@ -4,6 +4,8 @@ This module provides the TasksScreen which displays a filterable
 list of tasks with the ability to view task details.
 """
 
+import logging
+
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container
@@ -13,6 +15,8 @@ from textual.widgets import Label
 from asynctasq_monitor.models.task import Task, TaskFilters, TaskStatus
 from asynctasq_monitor.tui.widgets.filter_bar import FilterBar
 from asynctasq_monitor.tui.widgets.task_table import TaskTable
+
+logger = logging.getLogger(__name__)
 
 
 class TasksScreen(Container):
@@ -91,19 +95,34 @@ class TasksScreen(Container):
 
             service = TaskService()
             filters = TaskFilters()
-            tasks, _total = await service.get_tasks(filters, limit=100, offset=0)
+            tasks, total = await service.get_tasks(filters, limit=100, offset=0)
+            logger.info("Fetched %d tasks from backend", total)
+            # Update reactive attribute - watch_tasks will handle UI update
             self.tasks = tasks
+        except Exception as e:
+            # Log the error for debugging and notify user
+            logger.exception("Failed to fetch tasks from backend: %s", e)
+            self.app.notify(f"Failed to fetch tasks: {e}", severity="error", timeout=5)
+            # Show empty state but don't crash the TUI
+
+    def watch_tasks(self, tasks: list[Task]) -> None:
+        """React to task list changes and update the table."""
+        logger.info("watch_tasks called with %d tasks", len(tasks))
+        try:
             self._update_table()
-        except Exception:
-            # If backend fetch fails, show empty state
-            # Don't crash the TUI
-            pass
+        except Exception as e:
+            logger.exception("Error in watch_tasks: %s", e)
 
     def _update_table(self) -> None:
         """Update the task table with filtered tasks."""
-        filtered_tasks = self._filter_tasks(self.tasks)
-        table = self.query_one("#task-table", TaskTable)
-        table.update_tasks(filtered_tasks)
+        try:
+            filtered_tasks = self._filter_tasks(self.tasks)
+            logger.info("Updating table with %d filtered tasks", len(filtered_tasks))
+            table = self.query_one("#task-table", TaskTable)
+            table.update_tasks(filtered_tasks)
+            logger.info("Table updated successfully")
+        except Exception as e:
+            logger.exception("Could not update table: %s", e)
 
     def _filter_tasks(self, tasks: list[Task]) -> list[Task]:
         """Apply current filters to task list.

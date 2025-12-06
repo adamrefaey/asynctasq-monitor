@@ -9,11 +9,15 @@ Design Principles (2024-2025 Best Practices):
 - Zebra striping for readability
 """
 
+import logging
+
 from rich.text import Text
 from textual.message import Message
 from textual.widgets import DataTable
 
 from asynctasq_monitor.models.task import Task, TaskStatus
+
+logger = logging.getLogger(__name__)
 
 
 class TaskTable(DataTable):
@@ -84,6 +88,7 @@ class TaskTable(DataTable):
         Args:
             tasks: List of Task objects to display.
         """
+        logger.info("TaskTable.update_tasks called with %d tasks", len(tasks))
         self.clear()
 
         # Sort tasks: incomplete first (by status priority), then by enqueued time
@@ -136,6 +141,9 @@ class TaskTable(DataTable):
                 Text(duration_display, style=base_style),
                 key=task.id,
             )
+            logger.debug("Added row for task %s: %s", task.id[:8], task.name)
+
+        logger.info("TaskTable now has %d rows", self.row_count)
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         """Handle row selection - emit custom TaskSelected message.

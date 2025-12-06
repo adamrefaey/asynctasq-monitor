@@ -9,12 +9,17 @@ Design Principles (2024-2025 Best Practices):
 - Real-time updates via reactive attributes
 """
 
+import logging
+
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, VerticalScroll
 from textual.reactive import reactive
 from textual.widgets import Label, Sparkline, Static
 
 from asynctasq_monitor.tui.widgets.metric_card import MetricCard
+
+logger = logging.getLogger(__name__)
 
 
 class DashboardScreen(Container):
@@ -48,6 +53,48 @@ class DashboardScreen(Container):
         with VerticalScroll(id="recent-activity"):
             yield Label("Recent Activity", classes="container-title")
             yield Static("Waiting for events...", id="activity-log", classes="activity-log")
+
+    def on_mount(self) -> None:
+        """Load initial metrics when mounted."""
+        # Set interval to refresh metrics periodically
+        self.set_interval(2.0, self._refresh_metrics_from_backend)
+        # Initial load
+        self._refresh_metrics_from_backend()
+
+    def _refresh_metrics_from_backend(self) -> None:
+        """Fetch metrics from backend asynchronously."""
+        self._fetch_metrics_worker()
+
+    @work(exclusive=False)
+    async def _fetch_metrics_worker(self) -> None:
+        """Fetch metrics and update the UI (worker method)."""
+        try:
+            from asynctasq_monitor.services.queue_service import QueueService
+
+            service = QueueService()
+            response = await service.get_queues()
+
+            # Aggregate metrics from all queues
+            pending = sum(q.depth for q in response.items)
+            running = sum(q.processing for q in response.items)
+            completed = sum(q.completed_total for q in response.items)
+            failed = sum(q.failed_total for q in response.items)
+
+            self.pending_count = pending
+            self.running_count = running
+            self.completed_count = completed
+            self.failed_count = failed
+
+            logger.info(
+                "Fetched metrics: pending=%d, running=%d, completed=%d, failed=%d",
+                pending,
+                running,
+                completed,
+                failed,
+            )
+        except Exception as e:
+            logger.exception("Failed to fetch metrics from backend: %s", e)
+            # Don't crash the TUI
 
     def watch_pending_count(self, value: int) -> None:
         """Update pending metric card when count changes."""

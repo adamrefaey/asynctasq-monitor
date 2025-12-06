@@ -44,6 +44,22 @@ def tui(
     A keyboard-driven dashboard for monitoring tasks, workers, and queues
     directly in your terminal. Perfect for SSH sessions.
     """
+    import logging
+
+    # Set up logging to see what's happening
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(name)s - %(levelname)s - %(message)s",
+        filename="/tmp/asynctasq-monitor.log",
+        filemode="w",
+    )
+
+    # Configure asynctasq global config so TaskService can access the driver
+    from asynctasq.config import set_global_config
+
+    set_global_config(driver="redis", redis_url=redis_url)
+    logging.getLogger(__name__).info("Set global config with redis_url=%s", redis_url)
+
     try:
         from asynctasq_monitor.tui.app import AsyncTasQMonitorTUI
     except ImportError:

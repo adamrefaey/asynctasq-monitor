@@ -4,8 +4,10 @@ This module provides the QueuesScreen which displays all queues
 with their health status, pending counts, and throughput metrics.
 """
 
+import logging
+
 from rich.text import Text
-from textual import on
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal
 from textual.message import Message
@@ -13,6 +15,8 @@ from textual.reactive import reactive
 from textual.widgets import DataTable, Label, Static
 
 from asynctasq_monitor.models.queue import Queue, QueueStatus
+
+logger = logging.getLogger(__name__)
 
 
 class QueueTable(DataTable):
@@ -270,71 +274,36 @@ class QueuesScreen(Container):
         yield QueueTable(id="queue-table")
 
     def on_mount(self) -> None:
-        """Load sample data when mounted."""
-        self._load_sample_data()
+        """Load queue data when mounted."""
+        # Set interval to refresh queues periodically
+        self.set_interval(2.0, self._refresh_queues_from_backend)
+        # Initial load
+        self._refresh_queues_from_backend()
 
-    def _load_sample_data(self) -> None:
-        """Load sample queue data for development/testing."""
-        sample_queues = [
-            Queue(
-                name="default",
-                status=QueueStatus.ACTIVE,
-                depth=42,
-                processing=3,
-                completed_total=15678,
-                failed_total=23,
-                workers_assigned=3,
-                throughput_per_minute=45.2,
-                avg_duration_ms=234.5,
-            ),
-            Queue(
-                name="high",
-                status=QueueStatus.ACTIVE,
-                depth=8,
-                processing=2,
-                completed_total=8923,
-                failed_total=12,
-                workers_assigned=2,
-                throughput_per_minute=28.5,
-                avg_duration_ms=156.2,
-            ),
-            Queue(
-                name="email",
-                status=QueueStatus.PAUSED,
-                depth=0,
-                processing=0,
-                completed_total=45678,
-                failed_total=89,
-                workers_assigned=0,
-                throughput_per_minute=0.0,
-                avg_duration_ms=1234.5,
-            ),
-            Queue(
-                name="report",
-                status=QueueStatus.ACTIVE,
-                depth=156,
-                processing=1,
-                completed_total=2345,
-                failed_total=56,
-                workers_assigned=1,
-                throughput_per_minute=8.2,
-                avg_duration_ms=5678.9,
-            ),
-            Queue(
-                name="low",
-                status=QueueStatus.ACTIVE,
-                depth=12,
-                processing=1,
-                completed_total=3456,
-                failed_total=7,
-                workers_assigned=1,
-                throughput_per_minute=12.3,
-                avg_duration_ms=345.6,
-            ),
-        ]
+    def _refresh_queues_from_backend(self) -> None:
+        """Fetch queues from backend asynchronously."""
+        self._fetch_queues_worker()
 
-        self.queues = sample_queues
-        self._update_display()
+    @work(exclusive=False)
+    async def _fetch_queues_worker(self) -> None:
+        """Fetch queues and update the UI (worker method)."""
+        try:
+            from asynctasq_monitor.services.queue_service import QueueService
+
+            service = QueueService()
+            response = await service.get_queues()
+            logger.info("Fetched %d queues from backend", response.total)
+            self.queues = response.items
+        except Exception as e:
+            logger.exception("Failed to fetch queues from backend: %s", e)
+            # Don't crash the TUI, show empty state
+
+    def watch_queues(self, queues: list[Queue]) -> None:
+        """React to queue list changes and update the display."""
+        try:
+            self._update_display()
+        except Exception:
+            pass  # Display not mounted yet
 
     def _update_display(self) -> None:
         """Update all display components with current queue data."""

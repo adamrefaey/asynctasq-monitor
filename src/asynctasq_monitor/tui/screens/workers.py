@@ -4,8 +4,10 @@ This module provides the WorkersScreen which shows all workers
 with their status, resource usage, and current tasks.
 """
 
+import logging
+
 from rich.text import Text
-from textual import on
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal
 from textual.message import Message
@@ -13,6 +15,8 @@ from textual.reactive import reactive
 from textual.widgets import DataTable, Label, Static
 
 from asynctasq_monitor.models.worker import Worker, WorkerStatus
+
+logger = logging.getLogger(__name__)
 
 
 class WorkerTable(DataTable):
@@ -275,87 +279,45 @@ class WorkersScreen(Container):
         yield WorkerTable(id="worker-table")
 
     def on_mount(self) -> None:
-        """Load sample data when mounted."""
-        self._load_sample_data()
+        """Load worker data when mounted."""
+        # Set interval to refresh workers periodically
+        self.set_interval(2.0, self._refresh_workers_from_backend)
+        # Initial load
+        self._refresh_workers_from_backend()
 
-    def _load_sample_data(self) -> None:
-        """Load sample worker data for development/testing."""
-        from datetime import UTC, datetime, timedelta
+    def _refresh_workers_from_backend(self) -> None:
+        """Fetch workers from backend asynchronously."""
+        self._fetch_workers_worker()
 
-        # Create sample workers
-        sample_workers = [
-            Worker(
-                id="worker-001-abcdef",
-                name="worker-prod-01",
-                hostname="server-01.example.com",
-                pid=12345,
-                status=WorkerStatus.ACTIVE,
-                queues=["high", "default"],
-                current_task_id="task-123",
-                current_task_name="process_payment",
-                tasks_processed=1542,
-                tasks_failed=23,
-                cpu_usage=45.0,
-                memory_mb=128,
-                last_heartbeat=datetime.now(UTC) - timedelta(seconds=2),
-            ),
-            Worker(
-                id="worker-002-ghijkl",
-                name="worker-prod-02",
-                hostname="server-02.example.com",
-                pid=12346,
-                status=WorkerStatus.ACTIVE,
-                queues=["default", "email"],
-                current_task_id="task-456",
-                current_task_name="send_email",
-                tasks_processed=892,
-                tasks_failed=5,
-                cpu_usage=32.0,
-                memory_mb=96,
-                last_heartbeat=datetime.now(UTC) - timedelta(seconds=1),
-            ),
-            Worker(
-                id="worker-003-mnopqr",
-                name="worker-prod-03",
-                hostname="server-03.example.com",
-                pid=12347,
-                status=WorkerStatus.ACTIVE,
-                queues=["email"],
-                current_task_id="task-789",
-                current_task_name="send_email",
-                tasks_processed=756,
-                tasks_failed=12,
-                cpu_usage=28.0,
-                memory_mb=92,
-                last_heartbeat=datetime.now(UTC),
-            ),
-            Worker(
-                id="worker-004-stuvwx",
-                name="worker-prod-04",
-                hostname="server-04.example.com",
-                pid=12348,
-                status=WorkerStatus.IDLE,
-                queues=["low"],
-                current_task_id=None,
-                current_task_name=None,
-                tasks_processed=234,
-                tasks_failed=2,
-                cpu_usage=5.0,
-                memory_mb=64,
-                last_heartbeat=datetime.now(UTC),
-            ),
-        ]
+    @work(exclusive=False)
+    async def _fetch_workers_worker(self) -> None:
+        """Fetch workers and update the UI (worker method)."""
+        try:
+            from asynctasq_monitor.services.worker_service import WorkerService
 
-        # Update the table
-        table = self.query_one(WorkerTable)
-        table.update_workers(sample_workers)
+            service = WorkerService()
+            response = await service.get_workers()
+            logger.info("Fetched %d workers from backend", response.total)
+            self._update_worker_display(response.items)
+        except Exception as e:
+            logger.exception("Failed to fetch workers from backend: %s", e)
+            # Don't crash the TUI
 
-        # Update summary counts
-        summary = self.query_one(WorkerSummary)
-        active_count = sum(1 for w in sample_workers if w.status == WorkerStatus.ACTIVE)
-        idle_count = sum(1 for w in sample_workers if w.status == WorkerStatus.IDLE)
-        offline_count = sum(1 for w in sample_workers if w.status == WorkerStatus.OFFLINE)
-        summary.update_counts(active_count, idle_count, offline_count)
+    def _update_worker_display(self, workers: list[Worker]) -> None:
+        """Update the display with worker data."""
+        try:
+            # Update table
+            table = self.query_one(WorkerTable)
+            table.update_workers(workers)
+
+            # Update summary counts
+            summary = self.query_one(WorkerSummary)
+            active_count = sum(1 for w in workers if w.status == WorkerStatus.ACTIVE)
+            idle_count = sum(1 for w in workers if w.status == WorkerStatus.IDLE)
+            offline_count = sum(1 for w in workers if w.status == WorkerStatus.OFFLINE)
+            summary.update_counts(active_count, idle_count, offline_count)
+        except Exception:
+            pass  # Display not mounted yet
 
     def update_workers(self, workers: list[Worker]) -> None:
         """Update the screen with new worker data.
