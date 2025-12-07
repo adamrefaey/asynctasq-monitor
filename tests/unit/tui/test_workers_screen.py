@@ -428,39 +428,106 @@ class TestWorkersScreen:
 
     @pytest.mark.asyncio
     async def test_sample_data_loaded_on_mount(self) -> None:
-        """Test that sample data is loaded when screen mounts."""
+        """Test that data is loaded from backend when screen mounts."""
+        from unittest.mock import AsyncMock, patch
+
         from textual.app import App
+
+        from asynctasq_monitor.models.worker import WorkerListResponse
+
+        # Create mock workers
+        now = datetime.now(UTC)
+        mock_workers = [
+            Worker(
+                id="worker-001",
+                name="worker-1",
+                status=WorkerStatus.ACTIVE,
+                queues=["default"],
+                last_heartbeat=now,
+            ),
+            Worker(
+                id="worker-002",
+                name="worker-2",
+                status=WorkerStatus.IDLE,
+                queues=["high"],
+                last_heartbeat=now,
+            ),
+        ]
+        mock_response = WorkerListResponse(items=mock_workers, total=2)
 
         class TestApp(App[None]):
             def compose(self):
                 yield WorkersScreen(id="test-screen")
 
-        async with TestApp().run_test() as pilot:
-            await pilot.pause()
-            screen = pilot.app.query_one("#test-screen", WorkersScreen)
-            table = screen.query_one(WorkerTable)
+        with patch(
+            "asynctasq_monitor.services.worker_service.WorkerService.get_workers",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        ):
+            async with TestApp().run_test() as pilot:
+                await pilot.pause()
+                await pilot.pause()  # Wait for async worker
+                screen = pilot.app.query_one("#test-screen", WorkersScreen)
+                table = screen.query_one(WorkerTable)
 
-            # Sample data should have 4 workers
-            assert table.row_count == 4
+                # Should have 2 workers from mock
+                assert table.row_count == 2
 
     @pytest.mark.asyncio
     async def test_sample_data_summary_counts(self) -> None:
-        """Test that sample data updates summary counts correctly."""
+        """Test that backend data updates summary counts correctly."""
+        from unittest.mock import AsyncMock, patch
+
         from textual.app import App
+
+        from asynctasq_monitor.models.worker import WorkerListResponse
+
+        # Create mock workers
+        now = datetime.now(UTC)
+        mock_workers = [
+            Worker(
+                id="worker-001",
+                name="worker-1",
+                status=WorkerStatus.ACTIVE,
+                queues=["default"],
+                last_heartbeat=now,
+            ),
+            Worker(
+                id="worker-002",
+                name="worker-2",
+                status=WorkerStatus.IDLE,
+                queues=["high"],
+                last_heartbeat=now,
+            ),
+            Worker(
+                id="worker-003",
+                name="worker-3",
+                status=WorkerStatus.OFFLINE,
+                queues=["low"],
+                last_heartbeat=now - timedelta(minutes=5),
+            ),
+        ]
+        mock_response = WorkerListResponse(items=mock_workers, total=3)
 
         class TestApp(App[None]):
             def compose(self):
                 yield WorkersScreen(id="test-screen")
 
-        async with TestApp().run_test() as pilot:
-            await pilot.pause()
-            screen = pilot.app.query_one("#test-screen", WorkersScreen)
-            summary = screen.query_one(WorkerSummary)
+        with patch(
+            "asynctasq_monitor.services.worker_service.WorkerService.get_workers",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        ):
+            async with TestApp().run_test() as pilot:
+                await pilot.pause()
+                await pilot.pause()  # Wait for async worker
+                screen = pilot.app.query_one("#test-screen", WorkersScreen)
+                summary = screen.query_one(WorkerSummary)
 
-            # Sample data: 3 active, 1 idle, 0 offline
-            assert summary.active_count == 3
-            assert summary.idle_count == 1
-            assert summary.offline_count == 0
+                # Mock data: 1 active, 1 idle, 1 offline
+                assert summary.active_count == 1
+                assert summary.idle_count == 1
+                assert summary.offline_count == 1
 
     @pytest.mark.asyncio
     async def test_update_workers_method(self) -> None:

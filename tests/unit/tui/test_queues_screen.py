@@ -498,39 +498,72 @@ class TestQueuesScreen:
 
     @pytest.mark.asyncio
     async def test_sample_data_loaded_on_mount(self) -> None:
-        """Test that sample data is loaded when screen mounts."""
+        """Test that data is loaded from backend when screen mounts."""
+        from unittest.mock import AsyncMock, patch
+
         from textual.app import App
+
+        from asynctasq_monitor.models.queue import QueueListResponse
+
+        # Create mock queues
+        mock_queues = [
+            Queue(name="default", status=QueueStatus.ACTIVE, depth=42, processing=3),
+            Queue(name="high", status=QueueStatus.ACTIVE, depth=8, processing=2),
+        ]
+        mock_response = QueueListResponse(items=mock_queues, total=2)
 
         class TestApp(App[None]):
             def compose(self):
                 yield QueuesScreen(id="test-screen")
 
-        async with TestApp().run_test() as pilot:
-            await pilot.pause()
-            screen = pilot.app.query_one("#test-screen", QueuesScreen)
-            table = screen.query_one(QueueTable)
+        with patch(
+            "asynctasq_monitor.services.queue_service.QueueService.get_queues",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        ):
+            async with TestApp().run_test() as pilot:
+                await pilot.pause()
+                await pilot.pause()  # Wait for async worker
+                screen = pilot.app.query_one("#test-screen", QueuesScreen)
+                table = screen.query_one(QueueTable)
 
-            # Sample data should have 5 queues
-            assert table.row_count == 5
+                # Should have 2 queues from mock
+                assert table.row_count == 2
 
     @pytest.mark.asyncio
     async def test_sample_data_summary_stats(self) -> None:
-        """Test that sample data updates summary stats correctly."""
+        """Test that backend data updates summary stats correctly."""
+        from unittest.mock import AsyncMock, patch
+
         from textual.app import App
+
+        from asynctasq_monitor.models.queue import QueueListResponse
+
+        # Create mock queues
+        mock_queues = [
+            Queue(name="default", status=QueueStatus.ACTIVE, depth=42, processing=3),
+            Queue(name="high", status=QueueStatus.ACTIVE, depth=8, processing=2),
+        ]
+        mock_response = QueueListResponse(items=mock_queues, total=2)
 
         class TestApp(App[None]):
             def compose(self):
                 yield QueuesScreen(id="test-screen")
 
-        async with TestApp().run_test() as pilot:
-            await pilot.pause()
-            screen = pilot.app.query_one("#test-screen", QueuesScreen)
-            summary = screen.query_one(QueueSummary)
+        with patch(
+            "asynctasq_monitor.services.queue_service.QueueService.get_queues",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        ):
+            async with TestApp().run_test() as pilot:
+                await pilot.pause()
+                await pilot.pause()  # Wait for async worker
+                screen = pilot.app.query_one("#test-screen", QueuesScreen)
+                summary = screen.query_one(QueueSummary)
 
-            # Sample data has 5 queues
-            assert summary.total_queues == 5
-            # Sum of sample depths: 42 + 8 + 0 + 156 + 12 = 218
-            assert summary.total_pending == 218
+                # Sum of mock depths: 42 + 8 = 50
+                assert summary.total_queues == 2
+                assert summary.total_pending == 50
 
     @pytest.mark.asyncio
     async def test_update_queues_method(self) -> None:
@@ -583,19 +616,35 @@ class TestQueuesScreen:
 
     @pytest.mark.asyncio
     async def test_reactive_queues_list(self) -> None:
-        """Test that queues reactive list is properly initialized."""
+        """Test that queues reactive list is properly initialized from backend."""
+        from unittest.mock import AsyncMock, patch
+
         from textual.app import App
+
+        from asynctasq_monitor.models.queue import QueueListResponse
+
+        mock_queues = [
+            Queue(name="default", status=QueueStatus.ACTIVE, depth=42, processing=3),
+            Queue(name="high", status=QueueStatus.ACTIVE, depth=8, processing=2),
+        ]
+        mock_response = QueueListResponse(items=mock_queues, total=2)
 
         class TestApp(App[None]):
             def compose(self):
                 yield QueuesScreen(id="test-screen")
 
-        async with TestApp().run_test() as pilot:
-            await pilot.pause()
-            screen = pilot.app.query_one("#test-screen", QueuesScreen)
+        with patch(
+            "asynctasq_monitor.services.queue_service.QueueService.get_queues",
+            new_callable=AsyncMock,
+            return_value=mock_response,
+        ):
+            async with TestApp().run_test() as pilot:
+                await pilot.pause()
+                await pilot.pause()  # Wait for async worker
+                screen = pilot.app.query_one("#test-screen", QueuesScreen)
 
-            # After mount, queues should be loaded with sample data
-            assert len(screen.queues) == 5
+                # After mount, queues should be loaded from backend
+                assert len(screen.queues) == 2
 
     @pytest.mark.asyncio
     async def test_queue_table_columns(self) -> None:
