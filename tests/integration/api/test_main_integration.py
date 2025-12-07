@@ -49,7 +49,7 @@ class TestCreateMonitoringApp:
         app = create_monitoring_app()
 
         assert isinstance(app, FastAPI)
-        assert app.title == "Async TasQ Monitor"
+        assert app.title == "AsyncTasQ Monitor"
         assert app.version == "1.0.0"
         assert app.docs_url == "/api/docs"
         assert app.redoc_url == "/api/redoc"
@@ -618,7 +618,7 @@ class TestFullAppIntegration:
                 response = client.get("/openapi.json")
                 assert response.status_code == 200
                 schema = response.json()
-                assert schema["info"]["title"] == "Async TasQ Monitor"
+                assert schema["info"]["title"] == "AsyncTasQ Monitor"
 
     @pytest.mark.asyncio
     async def test_async_client_integration(self) -> None:

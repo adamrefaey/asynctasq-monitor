@@ -1,4 +1,4 @@
-"""Async TasQ Monitor package.
+"""AsyncTasQ Monitor package.
 
 Web-based monitoring UI for asynctasq task queues.
 

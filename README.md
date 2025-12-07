@@ -1,4 +1,4 @@
-# Async TasQ Monitor
+# AsyncTasQ Monitor
 
 [![Tests](https://raw.githubusercontent.com/adamrefaey/asynctasq-monitor/main/.github/tests.svg)](https://github.com/adamrefaey/asynctasq-monitor/actions/workflows/ci.yml)
 [![Coverage](https://raw.githubusercontent.com/adamrefaey/asynctasq-monitor/main/.github/coverage.svg)](https://raw.githubusercontent.com/adamrefaey/asynctasq-monitor/main/.github/coverage.svg)

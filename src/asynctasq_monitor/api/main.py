@@ -74,7 +74,7 @@ def create_monitoring_app(
     import-time dependencies during packaging and tests.
     """
     app = FastAPI(
-        title="Async TasQ Monitor",
+        title="AsyncTasQ Monitor",
         version="1.0.0",
         docs_url="/api/docs",
         redoc_url="/api/redoc",

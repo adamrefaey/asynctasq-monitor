@@ -1,4 +1,4 @@
-# Async TasQ Monitor - Unified Justfile
+# AsyncTasQ Monitor - Unified Justfile
 # Commands for both backend (Python) and frontend (TypeScript/React)
 
 # Default recipe to display help
