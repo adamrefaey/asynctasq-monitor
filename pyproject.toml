@@ -157,6 +157,11 @@ filterwarnings = [
     "ignore:coroutine.*was never awaited:RuntimeWarning:tracemalloc",
     "ignore:coroutine.*was never awaited:RuntimeWarning:re",
     "ignore:coroutine.*was never awaited:RuntimeWarning:argparse",
+    # Filter warnings from Textual @work decorator when methods are mocked
+    # In snapshot tests, we mock _fetch_*_worker methods which are decorated with @work.
+    # When these mocked workers are called, they create coroutines that aren't awaited
+    # because we're testing visual snapshots, not actual data fetching behavior.
+    "ignore:coroutine.*was never awaited:RuntimeWarning:asynctasq_monitor.tui.screens",
     # Suppress Pytest assert rewrite warning when modules are imported early
     "ignore:Module already imported so cannot be rewritten:pytest.PytestAssertRewriteWarning",
 ]
