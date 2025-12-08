@@ -4,6 +4,7 @@ Tests for the TUI and Web subcommands with import error handling
 and configuration validation.
 """
 
+import re
 from unittest.mock import patch
 
 import pytest
@@ -14,6 +15,12 @@ from asynctasq_monitor.cli.main import app
 runner = CliRunner()
 
 
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape sequences from text."""
+    ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
+    return ansi_escape.sub("", text)
+
+
 class TestTUISubcommand:
     """Tests for the 'tui' subcommand."""
 
@@ -22,7 +29,7 @@ class TestTUISubcommand:
         """Test that 'tui --help' shows tui-specific options."""
         result = runner.invoke(app, ["tui", "--help"])
         assert result.exit_code == 0
-        output = result.stdout
+        output = strip_ansi(result.stdout)
         assert "--redis-url" in output
         assert "--theme" in output
         assert "--refresh-rate" in output
@@ -74,9 +81,10 @@ class TestTUISubcommand:
         """Test that tui help shows all options."""
         result = runner.invoke(app, ["tui", "--help"])
         assert result.exit_code == 0
-        assert "--redis-url" in result.stdout
-        assert "--theme" in result.stdout
-        assert "--refresh-rate" in result.stdout
+        output = strip_ansi(result.stdout)
+        assert "--redis-url" in output
+        assert "--theme" in output
+        assert "--refresh-rate" in output
 
     @pytest.mark.unit
     def test_tui_help_contains_description(self) -> None:
@@ -105,7 +113,7 @@ class TestWebSubcommandExtended:
         """Test that web help shows all required options."""
         result = runner.invoke(app, ["web", "--help"])
         assert result.exit_code == 0
-        output = result.stdout
+        output = strip_ansi(result.stdout)
         assert "--port" in output
         assert "--host" in output
         assert "--reload" in output or "reload" in output.lower()
@@ -127,7 +135,8 @@ class TestWebSubcommandExtended:
         result = runner.invoke(app, ["web", "--help"])
         assert result.exit_code == 0
         # Should show defaults in some form
-        assert "--host" in result.stdout
+        output = strip_ansi(result.stdout)
+        assert "--host" in output
 
     @pytest.mark.unit
     def test_web_shows_default_port_in_help(self) -> None:
@@ -135,7 +144,8 @@ class TestWebSubcommandExtended:
         result = runner.invoke(app, ["web", "--help"])
         assert result.exit_code == 0
         # Should show port option
-        assert "--port" in result.stdout
+        output = strip_ansi(result.stdout)
+        assert "--port" in output
 
     @pytest.mark.unit
     def test_web_workers_minimum_value(self) -> None:

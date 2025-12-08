@@ -4,6 +4,8 @@ Tests for comprehensive coverage of the TUI app including
 event handling, lifecycle, and tab switching.
 """
 
+from unittest.mock import patch
+
 import pytest
 
 from asynctasq_monitor.tui.app import AsyncTasQMonitorTUI
@@ -91,48 +93,57 @@ class TestAsyncTasQMonitorTUIEventHandling:
     async def test_app_connection_status_changed_connected(self) -> None:
         """Test that app handles connection status changed event - connected."""
         app = AsyncTasQMonitorTUI()
-        async with app.run_test() as pilot:
-            await pilot.pause()
 
-            # Create and post a connection status event
-            event = ConnectionStatusChanged(connected=True, error=None)
-            app.post_message(event)
-            await pilot.pause()
+        # Mock event streaming to prevent actual Redis connection
+        with patch.object(app, "_start_event_streaming"):
+            async with app.run_test() as pilot:
+                await pilot.pause()
 
-            # App should update is_connected
-            assert app.is_connected is True
+                # Create and post a connection status event
+                event = ConnectionStatusChanged(connected=True, error=None)
+                app.post_message(event)
+                await pilot.pause()
+
+                # App should update is_connected
+                assert app.is_connected is True
 
     @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_app_connection_status_changed_disconnected(self) -> None:
         """Test that app handles connection status changed event - disconnected."""
         app = AsyncTasQMonitorTUI()
-        async with app.run_test() as pilot:
-            # First connect
-            app.post_message(ConnectionStatusChanged(connected=True, error=None))
-            await pilot.pause()
-            assert app.is_connected is True
 
-            # Then disconnect
-            app.post_message(ConnectionStatusChanged(connected=False, error=None))
-            await pilot.pause()
+        # Mock event streaming to prevent actual Redis connection
+        with patch.object(app, "_start_event_streaming"):
+            async with app.run_test() as pilot:
+                # First connect
+                app.post_message(ConnectionStatusChanged(connected=True, error=None))
+                await pilot.pause()
+                assert app.is_connected is True
 
-            assert app.is_connected is False
+                # Then disconnect
+                app.post_message(ConnectionStatusChanged(connected=False, error=None))
+                await pilot.pause()
+
+                assert app.is_connected is False
 
     @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_app_connection_status_with_error(self) -> None:
         """Test that app handles connection status with error."""
         app = AsyncTasQMonitorTUI()
-        async with app.run_test() as pilot:
-            await pilot.pause()
 
-            # Post error event
-            event = ConnectionStatusChanged(connected=False, error="Connection refused")
-            app.post_message(event)
-            await pilot.pause()
+        # Mock event streaming to prevent actual Redis connection
+        with patch.object(app, "_start_event_streaming"):
+            async with app.run_test() as pilot:
+                await pilot.pause()
 
-            assert app.is_connected is False
+                # Post error event
+                event = ConnectionStatusChanged(connected=False, error="Connection refused")
+                app.post_message(event)
+                await pilot.pause()
+
+                assert app.is_connected is False
 
     @pytest.mark.unit
     @pytest.mark.asyncio
