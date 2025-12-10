@@ -1,5 +1,9 @@
 # AsyncTasQ Monitor
 
+> ## ⚠️ **ACTIVE DEVELOPMENT WARNING** ⚠️
+>
+> **This project is currently under active development and is NOT ready for production use.**
+
 [![Tests](https://raw.githubusercontent.com/adamrefaey/asynctasq-monitor/main/.github/tests.svg)](https://github.com/adamrefaey/asynctasq-monitor/actions/workflows/ci.yml)
 [![Coverage](https://raw.githubusercontent.com/adamrefaey/asynctasq-monitor/main/.github/coverage.svg)](https://raw.githubusercontent.com/adamrefaey/asynctasq-monitor/main/.github/coverage.svg)
 [![Python Version](https://raw.githubusercontent.com/adamrefaey/asynctasq-monitor/main/.github/python-version.svg)](https://www.python.org/downloads/)
