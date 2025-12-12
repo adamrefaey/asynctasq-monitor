@@ -56,7 +56,7 @@ packages = ["src/asynctasq_monitor"]
 [dependency-groups]
 dev = [
     "asynctasq-monitor[all]",     # Install all optional extras for dev
-    "asynctasq>=0.9.10",           # Install from PyPI (override locally with justfile)
+    "asynctasq>=0.9.14",           # Install from PyPI (override locally with justfile)
     "redis[hiredis]>=7.1.0",      # For event consumer testing
     "pyright>=1.1.407",
     "pytest>=9.0.1",
